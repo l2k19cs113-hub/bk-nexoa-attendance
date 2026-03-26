@@ -15,7 +15,18 @@ const useAuthStore = create((set, get) => ({
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
-        const profile = await usersApi.getProfile(session.user.id);
+        let profile = await usersApi.getProfile(session.user.id);
+        
+        // Ensure profile exists correctly
+        if (!profile) {
+          const role = session.user.email.toLowerCase() === 'kaththibala89@gmail.com' ? 'admin' : 'employee';
+          profile = await usersApi.createProfile(session.user.id, {
+            name: session.user.email.split('@')[0],
+            email: session.user.email,
+            role: role,
+          });
+        }
+        
         set({
           user: session.user,
           profile,
@@ -33,7 +44,19 @@ const useAuthStore = create((set, get) => ({
 
   signIn: async (email, password) => {
     const data = await authApi.signIn({ email, password });
-    const profile = await usersApi.getProfile(data.user.id);
+    let profile = await usersApi.getProfile(data.user.id);
+
+    // If profile is missing (created manually in Auth), create it now
+    if (!profile) {
+      // Auto-assign admin role for your email
+      const role = email.toLowerCase() === 'kaththibala89@gmail.com' ? 'admin' : 'employee';
+      profile = await usersApi.createProfile(data.user.id, {
+        name: email.split('@')[0],
+        email: email,
+        role: role,
+      });
+    }
+
     set({
       user: data.user,
       profile,
