@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "BK Nexoa Tech Attendance",
+    "slug": "bk-nexoa-attendance",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0F1E"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bknexoa.attendance",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location for attendance check-in.",
+        "NSLocationAlwaysUsageDescription": "We need your location for attendance check-in.",
+        "NSCameraUsageDescription": "We need camera access for report attachments.",
+        "NSPhotoLibraryUsageDescription": "We need photo access to upload report proofs."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0F1E"
+      },
+      "package": "com.bknexoa.attendance",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#6C63FF"
+        }
+      ]
+    ],
+    "scheme": "bknexoa"
+  }
+}
