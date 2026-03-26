@@ -41,11 +41,9 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router",
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
           "color": "#6C63FF"
         }
       ]
