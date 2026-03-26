@@ -18,26 +18,33 @@ const useAuthStore = create((set, get) => ({
         let profile = await usersApi.getProfile(session.user.id);
         
         // Ensure profile exists correctly
-        if (!profile) {
-          const role = session.user.email.toLowerCase() === 'kaththibala89@gmail.com' ? 'admin' : 'employee';
-          profile = await usersApi.createProfile(session.user.id, {
-            name: session.user.email.split('@')[0],
-            email: session.user.email,
-            role: role,
-          });
+        try {
+          if (!profile) {
+            console.log('Profile missing for user, creating now...');
+            const role = session.user.email.toLowerCase() === 'kaththibala89@gmail.com' ? 'admin' : 'employee';
+            profile = await usersApi.createProfile(session.user.id, {
+              name: session.user.email.split('@')[0],
+              email: session.user.email,
+              role: role,
+            });
+          }
+        } catch (profileErr) {
+          console.error('Failed to create profile during init:', profileErr);
+          // Don't set profile, which will fall back to login or session logout
         }
         
         set({
           user: session.user,
           profile,
           session,
-          isAuthenticated: true,
+          isAuthenticated: !!profile,
           isLoading: false,
         });
       } else {
         set({ isLoading: false, isAuthenticated: false });
       }
     } catch (err) {
+      console.error('Initialization error:', err);
       set({ isLoading: false, isAuthenticated: false });
     }
   },
@@ -48,13 +55,17 @@ const useAuthStore = create((set, get) => ({
 
     // If profile is missing (created manually in Auth), create it now
     if (!profile) {
-      // Auto-assign admin role for your email
-      const role = email.toLowerCase() === 'kaththibala89@gmail.com' ? 'admin' : 'employee';
-      profile = await usersApi.createProfile(data.user.id, {
-        name: email.split('@')[0],
-        email: email,
-        role: role,
-      });
+      try {
+        const role = email.toLowerCase() === 'kaththibala89@gmail.com' ? 'admin' : 'employee';
+        profile = await usersApi.createProfile(data.user.id, {
+          name: email.split('@')[0],
+          email: email.toLowerCase(),
+          role: role,
+        });
+      } catch (profileErr) {
+        console.error('Sign-in profile creation failed:', profileErr);
+        throw new Error('Signed in to auth, but failed to link your profile to the database. Please contact your admin.');
+      }
     }
 
     set({
