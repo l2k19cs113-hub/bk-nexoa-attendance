@@ -61,6 +61,16 @@ export const usersApi = {
       .select('*')
       .eq('id', userId)
       .single();
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
+  },
+
+  createProfile: async (userId, profileData) => {
+    const { data, error } = await supabase
+      .from('users')
+      .insert({ id: userId, ...profileData })
+      .select()
+      .single();
     if (error) throw error;
     return data;
   },
