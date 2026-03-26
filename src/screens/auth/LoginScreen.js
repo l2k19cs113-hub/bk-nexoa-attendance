@@ -136,22 +136,10 @@ export default function LoginScreen({ navigation }) {
               </LinearGradient>
             </TouchableOpacity>
 
-            {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Register Link */}
-            <TouchableOpacity style={styles.registerRow} onPress={() => navigation.navigate('Signup')}>
-              <Text style={styles.registerLabel}>Don't have an account? </Text>
-              <Text style={styles.registerLink}>Create Account</Text>
-            </TouchableOpacity>
           </Animated.View>
 
           {/* Footer */}
-          <Text style={styles.footer}>© 2024 BK Nexoa Tech • All rights reserved</Text>
+          <Text style={styles.footer}>© 2026 BK Nexoa Tech • All rights reserved</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
