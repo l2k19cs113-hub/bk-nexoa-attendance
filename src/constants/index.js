@@ -1,8 +1,8 @@
 // BK Nexoa Tech Attendance - Supabase Configuration
 // Replace these values with your actual Supabase project credentials
 
-export const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-export const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE';
+export const SUPABASE_URL = 'https://whquxysoloqqtjtewnom.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_V9aOuN7VjwAE8pFOHSIzzQ_68kj--Oy';
 
 // App Constants
 export const APP_NAME = 'BK Nexoa Tech Attendance';
