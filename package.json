@@ -1,14 +1,16 @@
 {
   "name": "bk-nexoa-attendance",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "App.js",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build": "npx expo export --platform web"
   },
   "dependencies": {
+    "@expo/metro-runtime": "^55.0.6",
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/bottom-tabs": "^6.6.1",
@@ -31,6 +33,7 @@
     "expo-splash-screen": "~0.27.6",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
+    "react-dom": "^19.2.4",
     "react-native": "0.74.5",
     "react-native-calendars": "^1.1305.0",
     "react-native-chart-kit": "^6.12.0",
@@ -40,6 +43,7 @@
     "react-native-screens": "3.31.1",
     "react-native-svg": "15.2.0",
     "react-native-url-polyfill": "^2.0.0",
+    "react-native-web": "^0.21.2",
     "zustand": "^4.5.4"
   },
   "devDependencies": {
