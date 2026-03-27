@@ -4,7 +4,11 @@
     "slug": "bk-nexora-attendance",
     "version": "1.0.0",
     "orientation": "portrait",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -12,10 +16,12 @@
       "resizeMode": "contain",
       "backgroundColor": "#0A0F1E"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bknexoa.attendance",
+      "bundleIdentifier": "com.bknexora.attendance",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "We need your location for attendance check-in.",
         "NSLocationAlwaysUsageDescription": "We need your location for attendance check-in.",
@@ -28,7 +34,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A0F1E"
       },
-      "package": "com.bknexoa.attendance",
+      "package": "com.bknexora.attendance",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
@@ -47,8 +53,34 @@
         {
           "color": "#6C63FF"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysPermission": "Allow BK Nexora to access your location for accurate attendance check-ins."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you upload report attachments.",
+          "cameraPermission": "The app accesses your camera to let you take photos for reports."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0A0F1E",
+          "image": "./assets/splash.png",
+          "imageWidth": 200
+        }
       ]
     ],
-    "scheme": "bknexoa"
+    "scheme": "bknexora",
+    "extra": {
+      "eas": {
+        "projectId": "cf1d0271-3e24-4abb-af13-6deb929435c0"
+      }
+    }
   }
 }
