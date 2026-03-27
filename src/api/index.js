@@ -123,9 +123,12 @@ export const usersApi = {
 
 export const attendanceApi = {
   checkIn: async ({ userId, location }) => {
-    // Get local date (YYYY-MM-DD)
+    // Get local date (YYYY-MM-DD) — reliable cross-platform format
     const now = new Date();
-    const today = now.toLocaleDateString('en-CA'); // 'en-CA' gives YYYY-MM-DD format
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
     const currentTime = now.toISOString();
 
     // Check if already checked in today
@@ -156,7 +159,10 @@ export const attendanceApi = {
 
   checkOut: async ({ userId }) => {
     const now = new Date();
-    const today = now.toLocaleDateString('en-CA');
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
     const currentTime = now.toISOString();
 
     const { data, error } = await supabase
@@ -173,8 +179,9 @@ export const attendanceApi = {
   },
 
   getTodayAttendance: async (userId) => {
-    // Get local date (YYYY-MM-DD)
-    const today = new Date().toLocaleDateString('en-CA');
+    // Get local date (YYYY-MM-DD) — reliable cross-platform format
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     
     const { data, error } = await supabase
       .from('attendance')
@@ -244,9 +251,18 @@ export const attendanceApi = {
 
 // ─── REPORTS API ─────────────────────────────────────────────────────────────
 
+// Helper: safe YYYY-MM-DD without locale issues
+const getTodayDate = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const reportsApi = {
   submitReport: async (reportData) => {
-    const today = new Date().toLocaleDateString('en-CA');
+    const today = getTodayDate();
     
     // Check if it's multiple reports (array)
     if (Array.isArray(reportData)) {

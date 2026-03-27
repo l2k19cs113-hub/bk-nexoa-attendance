@@ -66,7 +66,7 @@ export default function SplashScreen({ navigation }) {
          {/* Logo Container */}
         <Animated.View style={styles.logoSquare}>
           <Image 
-            source={require('../../assets/logo.png')} 
+            source={require('../../assets/app_brand_v6.png')} 
             style={styles.logoImage} 
             resizeMode="contain" 
           />
