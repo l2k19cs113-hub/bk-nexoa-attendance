@@ -91,7 +91,8 @@ export default function EmployeeManagementScreen() {
       await load();
       Alert.alert('✅ Success', 'Employee details updated successfully');
     } catch (err) {
-      Alert.alert('Error', err.message || 'Could not update employee.');
+      console.error('Update failed:', err);
+      Alert.alert('Update Failed', err.message || 'Check your database permissions.');
     } finally {
       setUpdating(false);
     }
