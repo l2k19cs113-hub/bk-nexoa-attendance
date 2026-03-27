@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, KeyboardAvoidingView, Platform, Animated,
-  Dimensions, StatusBar, Alert, ActivityIndicator,
+  Dimensions, StatusBar, Alert, ActivityIndicator, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -63,13 +63,15 @@ export default function LoginScreen({ navigation }) {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.inner}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-          {/* Header */}
+           {/* Header */}
           <View style={styles.header}>
-            <LinearGradient colors={COLORS.gradientPrimary} style={styles.logoBox} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-              <Ionicons name="briefcase" size={32} color="#fff" />
-            </LinearGradient>
-            <Text style={styles.brand}>BK Nexoa Tech</Text>
-            <Text style={styles.subtitle}>Attendance System</Text>
+            <Image 
+              source={require('../../../assets/logo.png')} 
+              style={styles.logoImage} 
+              resizeMode="contain"
+            />
+            <Text style={styles.brand}>BK Nexora Tech</Text>
+            <Text style={styles.subtitle}>Powering the Next Generation</Text>
           </View>
 
           {/* Card */}
@@ -160,14 +162,19 @@ const styles = StyleSheet.create({
   },
   inner: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24, paddingTop: 60 },
-  header: { alignItems: 'center', marginBottom: 32 },
-  logoBox: {
-    width: 72, height: 72, borderRadius: 20,
-    justifyContent: 'center', alignItems: 'center',
-    shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5, shadowRadius: 16, elevation: 15, marginBottom: 14,
+  header: { alignItems: 'center',    marginBottom: 40,
   },
-  brand: { fontSize: 24, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
+  logoImage: {
+    width: 120,
+    height: 120,
+    marginBottom: 10,
+  },
+  brand: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 1,
+  },
   subtitle: { fontSize: 12, color: COLORS.primary, letterSpacing: 3, textTransform: 'uppercase', marginTop: 4 },
   card: {
     backgroundColor: COLORS.bgCard,

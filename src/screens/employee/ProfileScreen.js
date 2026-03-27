@@ -51,8 +51,8 @@ export default function ProfileScreen() {
     { icon: 'lock-closed-outline', label: 'Change Password', action: () => Alert.alert('Coming Soon', 'Password change will be available soon.') },
     { icon: 'notifications-outline', label: 'Notifications', action: null, toggle: true, value: notifications, onChange: setNotifications },
     { icon: 'moon-outline', label: 'Dark Mode', action: null, toggle: true, value: darkMode, onChange: setDarkMode },
-    { icon: 'help-circle-outline', label: 'Help & Support', action: () => Alert.alert('Support', 'Contact: support@bknexoa.com') },
-    { icon: 'information-circle-outline', label: 'About App', action: () => Alert.alert('BK Nexoa Tech Attendance', 'Version 1.1.0\n\nBuilt for teams that value productivity.') },
+    { icon: 'help-circle-outline', label: 'Help & Support', action: () => Alert.alert('Support', 'Contact: support@bknexora.com') },
+    { icon: 'information-circle-outline', label: 'About App', action: () => Alert.alert('BK Nexora Tech Attendance', 'Version 1.1.0\n\nBuilt for teams that value productivity.') },
   ];
 
   return (
@@ -170,7 +170,7 @@ export default function ProfileScreen() {
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
 
-        <Text style={styles.footer}>BK Nexoa Tech Attendance • v1.1.0</Text>
+        <Text style={styles.footer}>BK Nexora Tech Attendance • v1.1.0</Text>
         <View style={{ height: 80 }} />
       </ScrollView>
     </View>

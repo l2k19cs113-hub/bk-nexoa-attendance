@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, Animated, Dimensions, StatusBar,
+  View, Text, StyleSheet, Animated, Dimensions, StatusBar, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -63,23 +63,22 @@ export default function SplashScreen({ navigation }) {
           transform: [{ scale: ring1Anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] }) }]
         }]} />
 
-        {/* Logo */}
-        <LinearGradient
-          colors={COLORS.gradientPrimary}
-          style={styles.logoContainer}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Ionicons name="briefcase" size={48} color="#fff" />
-        </LinearGradient>
+         {/* Logo Container */}
+        <Animated.View style={styles.logoSquare}>
+          <Image 
+            source={require('../../assets/logo.png')} 
+            style={styles.logoImage} 
+            resizeMode="contain" 
+          />
+        </Animated.View>
       </Animated.View>
 
       <Animated.View style={[styles.textContainer, {
         opacity: fadeAnim,
         transform: [{ translateY: slideAnim }],
       }]}>
-        <Text style={styles.title}>BK Nexoa Tech</Text>
-        <Text style={styles.subtitle}>Attendance System</Text>
+        <Text style={styles.title}>BK Nexora Tech</Text>
+        <Text style={styles.subtitle}>Powering the Next Gen</Text>
         <View style={styles.divider} />
         <Text style={styles.tagline}>Track • Report • Excel</Text>
       </Animated.View>
@@ -116,27 +115,31 @@ const styles = StyleSheet.create({
   },
   ring1: { width: 130, height: 130 },
   ring2: { width: 130, height: 130, borderColor: `${COLORS.secondary}30` },
-  logoContainer: {
-    width: 100, height: 100, borderRadius: 28,
-    justifyContent: 'center', alignItems: 'center',
-    shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.6, shadowRadius: 24, elevation: 20,
+  logoSquare: {
+    width: 200,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  textContainer: { alignItems: 'center', marginTop: 36 },
+  logoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  textContainer: { alignItems: 'center', marginTop: 10 },
   title: {
-    fontSize: 32, fontWeight: '800', color: COLORS.textLight,
+    fontSize: 32, fontWeight: '900', color: COLORS.textLight,
     letterSpacing: 1, textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16, fontWeight: '400', color: COLORS.primary,
-    letterSpacing: 4, textTransform: 'uppercase', marginTop: 4,
+    fontSize: 14, fontWeight: '600', color: COLORS.primary,
+    letterSpacing: 4, textTransform: 'uppercase', marginTop: 10,
   },
   divider: {
     width: 60, height: 2, backgroundColor: COLORS.primary,
-    borderRadius: 2, marginVertical: 16, opacity: 0.6,
+    borderRadius: 2, marginVertical: 20, opacity: 0.6,
   },
   tagline: {
-    fontSize: 13, color: COLORS.textMuted, letterSpacing: 3,
+    fontSize: 11, color: COLORS.textMuted, letterSpacing: 5,
     textTransform: 'uppercase',
   },
   bottomBadge: {
