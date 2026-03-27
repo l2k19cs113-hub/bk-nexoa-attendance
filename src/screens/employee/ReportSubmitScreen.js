@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  ScrollView, StatusBar, Alert, ActivityIndicator,
+  ScrollView, StatusBar, Alert, ActivityIndicator, FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,37 +13,62 @@ export default function ReportSubmitScreen() {
   const { profile } = useAuthStore();
   const { submitReport, isSubmitting } = useReportsStore();
   
+  // Current form inputs
   const [clientName, setClientName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [callAction, setCallAction] = useState('Pick'); // Pick / Not Pick
-  const [reaction, setReaction] = useState('Accept'); // Accept / Not Accept
+  const [callAction, setCallAction] = useState('Pick'); 
+  const [reaction, setReaction] = useState('Accept'); 
   const [description, setDescription] = useState('');
+  
+  // Multi-client queue
+  const [queue, setQueue] = useState([]);
   const [errors, setErrors] = useState({});
 
   const validate = () => {
     const e = {};
-    if (!clientName.trim()) e.clientName = 'Client name is required';
-    if (!phoneNumber.trim()) e.phoneNumber = 'Phone number is required';
+    if (!clientName.trim()) e.clientName = 'Required';
+    if (!phoneNumber.trim()) e.phoneNumber = 'Required';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const addToQueue = () => {
     if (!validate()) return;
+    const newEntry = {
+      id: Date.now().toString(),
+      userId: profile.id,
+      client_name: clientName.trim(),
+      phone_number: phoneNumber.trim(),
+      call_action: callAction,
+      reaction: reaction,
+      description: description.trim() || 'No notes',
+    };
+    setQueue([newEntry, ...queue]);
+    
+    // Reset form for next client
+    setClientName('');
+    setPhoneNumber('');
+    setDescription('');
+    setErrors({});
+  };
+
+  const removeFromQueue = (id) => {
+    setQueue(queue.filter(item => item.id !== id));
+  };
+
+  const handleFinalSubmit = async () => {
+    if (queue.length === 0) {
+      Alert.alert('Empty Report', 'Please add at least one client call to the list first.');
+      return;
+    }
+
     try {
-      await submitReport({
-        userId: profile.id,
-        client_name: clientName.trim(),
-        phone_number: phoneNumber.trim(),
-        call_action: callAction,
-        reaction: reaction,
-        description: description.trim() || 'No additional notes',
-      });
-      Alert.alert('✅ Work Recorded', 'Call details updated successfully.', [
-        { text: 'OK', onPress: () => { setClientName(''); setPhoneNumber(''); setDescription(''); } },
+      await submitReport(queue); // Passing the array to our new bulk API
+      Alert.alert('✅ Batch Submitted', `Successfully recorded ${queue.length} client calls.`, [
+        { text: 'Great!', onPress: () => setQueue([]) },
       ]);
     } catch (err) {
-      Alert.alert('Error', err.message || 'Failed to submit report. Try again.');
+      Alert.alert('Submission Failed', err.message || 'Please try again.');
     }
   };
 
@@ -52,102 +77,121 @@ export default function ReportSubmitScreen() {
       <StatusBar barStyle="light-content" />
 
       <LinearGradient colors={['#0A0F1E', '#111827']} style={styles.header}>
-        <Text style={styles.headerTitle}>Daily Work Report</Text>
-        <Text style={styles.headerSub}>Log every client call here</Text>
+        <View>
+          <Text style={styles.headerTitle}>Multi-Client Report</Text>
+          <Text style={styles.headerSub}>Build your list and submit all at once</Text>
+        </View>
+        <View style={styles.counterBox}>
+          <Text style={styles.counterText}>{queue.length}</Text>
+          <Text style={styles.counterLabel}>QUEUED</Text>
+        </View>
       </LinearGradient>
 
       <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-        {/* Client Name */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Client Name *</Text>
-          <View style={[styles.inputWrapper, errors.clientName && styles.inputError]}>
-            <Ionicons name="person-outline" size={18} color={COLORS.textMuted} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. John Smith"
-              placeholderTextColor={COLORS.textMuted}
-              value={clientName}
-              onChangeText={setClientName}
-            />
+        
+        {/* Input Form Section */}
+        <View style={styles.formCard}>
+          <Text style={styles.sectionTitle}>Add New Client Call</Text>
+          
+          <View style={styles.inputRow}>
+            <View style={{ flex: 1.2, marginRight: 10 }}>
+              <Text style={styles.label}>Client Name *</Text>
+              <TextInput
+                style={[styles.smallInput, errors.clientName && styles.inputError]}
+                placeholder="John Smith"
+                placeholderTextColor={COLORS.textMuted}
+                value={clientName}
+                onChangeText={setClientName}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>Phone *</Text>
+              <TextInput
+                style={[styles.smallInput, errors.phoneNumber && styles.inputError]}
+                placeholder="9876543210"
+                placeholderTextColor={COLORS.textMuted}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
+              />
+            </View>
           </View>
+
+          <View style={styles.toggleSection}>
+            <View style={{ flex: 1 }}>
+               <Text style={styles.label}>Call Action</Text>
+               <View style={styles.miniToggle}>
+                 {['Pick', 'Not Pick'].map(opt => (
+                   <TouchableOpacity 
+                    key={opt} 
+                    onPress={() => setCallAction(opt)}
+                    style={[styles.miniBtn, callAction === opt && styles.miniBtnActive]}
+                   >
+                     <Text style={[styles.miniBtnText, callAction === opt && styles.miniBtnTextActive]}>{opt}</Text>
+                   </TouchableOpacity>
+                 ))}
+               </View>
+            </View>
+            <View style={{ flex: 1 }}>
+               <Text style={styles.label}>Reaction</Text>
+               <View style={styles.miniToggle}>
+                 {['Accept', 'Not Accept'].map(opt => (
+                   <TouchableOpacity 
+                    key={opt} 
+                    onPress={() => setReaction(opt)}
+                    style={[styles.miniBtn, reaction === opt && (opt === 'Accept' ? styles.btnGreen : styles.btnRed)]}
+                   >
+                     <Text style={[styles.miniBtnText, reaction === opt && styles.miniBtnTextActive]}>{opt}</Text>
+                   </TouchableOpacity>
+                 ))}
+               </View>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.addQueueBtn} onPress={addToQueue} activeOpacity={0.8}>
+            <LinearGradient colors={COLORS.gradientPrimary} style={styles.addQueueBtnInner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+              <Ionicons name="add-circle" size={18} color="#fff" />
+              <Text style={styles.addQueueBtnText}>Add to Daily List</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
 
-        {/* Phone Number */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Phone Number *</Text>
-          <View style={[styles.inputWrapper, errors.phoneNumber && styles.inputError]}>
-            <Ionicons name="call-outline" size={18} color={COLORS.textMuted} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. 9876543210"
-              placeholderTextColor={COLORS.textMuted}
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-              keyboardType="phone-pad"
-            />
-          </View>
-        </View>
-
-        {/* Call Action Selector */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Call Action</Text>
-          <View style={styles.toggleRow}>
-            {['Pick', 'Not Pick'].map((opt) => (
-              <TouchableOpacity
-                key={opt}
-                onPress={() => setCallAction(opt)}
-                style={[styles.toggleBtn, callAction === opt && styles.toggleBtnActive]}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.toggleText, callAction === opt && styles.toggleTextActive]}>{opt}</Text>
-              </TouchableOpacity>
+        {/* Queue Display Section */}
+        {queue.length > 0 && (
+          <View style={styles.queueContainer}>
+            <View style={styles.queueHeader}>
+              <Text style={styles.queueTitle}>Clients in Today's Report</Text>
+              <Text style={styles.queueSub}>Tap 'X' to remove any mistake</Text>
+            </View>
+            
+            {queue.map((item) => (
+              <View key={item.id} style={styles.queueItem}>
+                <View style={styles.queueInfo}>
+                  <Text style={styles.queueName}>{item.client_name}</Text>
+                  <Text style={styles.queuePhone}>{item.phone_number} • {item.call_action} • {item.reaction}</Text>
+                </View>
+                <TouchableOpacity onPress={() => removeFromQueue(item.id)}>
+                  <Ionicons name="close-circle" size={22} color={COLORS.danger} />
+                </TouchableOpacity>
+              </View>
             ))}
           </View>
-        </View>
+        )}
 
-        {/* Reaction Selector */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Reaction Status</Text>
-          <View style={styles.toggleRow}>
-            {['Accept', 'Not Accept'].map((opt) => (
-              <TouchableOpacity
-                key={opt}
-                onPress={() => setReaction(opt)}
-                style={[styles.toggleBtn, reaction === opt && (opt === 'Accept' ? styles.btnGreen : styles.btnRed)]}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.toggleText, reaction === opt && styles.toggleTextActive]}>{opt}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Work Description / Notes */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Work Description (Notes)</Text>
-          <View style={styles.textAreaWrapper}>
-            <TextInput
-              style={styles.textArea}
-              placeholder="Any specific notes about the call..."
-              placeholderTextColor={COLORS.textMuted}
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-          </View>
-        </View>
-
-        {/* Submit */}
-        <TouchableOpacity onPress={handleSubmit} disabled={isSubmitting} activeOpacity={0.85} style={{ marginTop: 10 }}>
-          <LinearGradient colors={COLORS.gradientPrimary} style={styles.submitBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+        {/* Final Submission Button */}
+        <TouchableOpacity 
+          onPress={handleFinalSubmit} 
+          disabled={isSubmitting || queue.length === 0} 
+          activeOpacity={0.85}
+          style={[styles.finalSubmitBox, (queue.length === 0) && { opacity: 0.5 }]}
+        >
+          <LinearGradient colors={COLORS.gradientSuccess} style={styles.finalSubmitBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
             {isSubmitting ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <View style={styles.submitBtnInner}>
-                <Ionicons name="save-outline" size={20} color="#fff" />
-                <Text style={styles.submitBtnText}>Record & Save</Text>
+              <View style={styles.finalSubmitInner}>
+                <Ionicons name="cloud-upload" size={22} color="#fff" />
+                <Text style={styles.finalSubmitText}>SUBMIT ALL ({queue.length}) CLIENTS</Text>
               </View>
             )}
           </LinearGradient>
@@ -161,32 +205,44 @@ export default function ReportSubmitScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgDark },
-  header: { paddingTop: 56, paddingBottom: 20, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  header: { 
+    paddingTop: 56, paddingBottom: 20, paddingHorizontal: 20, 
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'
+  },
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#fff' },
   headerSub: { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
+  counterBox: { backgroundColor: `${COLORS.primary}20`, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.primary },
+  counterText: { fontSize: 18, fontWeight: '800', color: COLORS.primary },
+  counterLabel: { fontSize: 8, color: COLORS.primary, fontWeight: '800' },
   body: { flex: 1, padding: 16 },
-  fieldGroup: { marginBottom: 20 },
-  label: { fontSize: 13, fontWeight: '700', color: COLORS.textMuted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
-  inputWrapper: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgCard,
-    borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, paddingHorizontal: 14, height: 54,
-  },
-  inputIcon: { marginRight: 12 },
-  input: { flex: 1, color: '#fff', fontSize: 15 },
+  formCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1, borderColor: COLORS.border, marginBottom: 20 },
+  sectionTitle: { fontSize: 12, fontWeight: '800', color: COLORS.primary, textTransform: 'uppercase', marginBottom: 16, letterSpacing: 1 },
+  label: { fontSize: 11, fontWeight: '700', color: COLORS.textMuted, marginBottom: 8, textTransform: 'uppercase' },
+  inputRow: { flexDirection: 'row', marginBottom: 16 },
+  smallInput: { backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, height: 46, color: '#fff', fontSize: 14 },
   inputError: { borderColor: COLORS.danger },
-  toggleRow: { flexDirection: 'row', gap: 12 },
-  toggleBtn: {
-    flex: 1, height: 48, borderRadius: RADIUS.md, backgroundColor: COLORS.bgCard,
-    justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.border,
-  },
-  toggleBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  btnGreen: { backgroundColor: COLORS.success, borderColor: COLORS.success },
-  btnRed: { backgroundColor: COLORS.danger, borderColor: COLORS.danger },
-  toggleText: { color: COLORS.textMuted, fontSize: 14, fontWeight: '700' },
-  toggleTextActive: { color: '#fff' },
-  textAreaWrapper: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, padding: 14 },
-  textArea: { color: '#fff', fontSize: 14, lineHeight: 22, minHeight: 100 },
-  submitBtn: { height: 56, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', marginTop: 10 },
-  submitBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  submitBtnText: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  toggleSection: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+  miniToggle: { flexDirection: 'row', backgroundColor: COLORS.bgInput, borderRadius: 8, padding: 4, height: 40, borderWidth: 1, borderColor: COLORS.border },
+  miniBtn: { flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 6 },
+  miniBtnActive: { backgroundColor: COLORS.primary },
+  btnGreen: { backgroundColor: COLORS.success },
+  btnRed: { backgroundColor: COLORS.danger },
+  miniBtnText: { fontSize: 10, color: COLORS.textMuted, fontWeight: '700' },
+  miniBtnTextActive: { color: '#fff' },
+  addQueueBtn: { borderRadius: RADIUS.md, overflow: 'hidden' },
+  addQueueBtnInner: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  addQueueBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  queueContainer: { marginTop: 10, marginBottom: 20 },
+  queueHeader: { marginBottom: 12 },
+  queueTitle: { fontSize: 15, fontWeight: '800', color: '#fff' },
+  queueSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  queueItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgCard, padding: 14, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, marginBottom: 8 },
+  queueInfo: { flex: 1 },
+  queueName: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  queuePhone: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  finalSubmitBox: { marginTop: 10 },
+  finalSubmitBtn: { height: 60, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', shadowColor: COLORS.success, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
+  finalSubmitInner: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  finalSubmitText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

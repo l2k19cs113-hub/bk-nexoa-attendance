@@ -245,28 +245,40 @@ export const attendanceApi = {
 // ─── REPORTS API ─────────────────────────────────────────────────────────────
 
 export const reportsApi = {
-  submitReport: async ({ userId, title, description, fileUri, fileType, client_name, phone_number, call_action, reaction }) => {
+  submitReport: async (reportData) => {
     const today = new Date().toLocaleDateString('en-CA');
-    let fileUrl = null;
+    
+    // Check if it's multiple reports (array)
+    if (Array.isArray(reportData)) {
+      const records = reportData.map(r => ({
+        user_id: r.userId,
+        title: r.title || `Call with ${r.client_name}`,
+        description: r.description || 'No notes',
+        date: today,
+        client_name: r.client_name,
+        phone_number: r.phone_number,
+        call_action: r.call_action,
+        reaction: r.reaction,
+        status: 'pending'
+      }));
 
-    if (fileUri) {
-      const fileName = `${userId}_${Date.now()}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('report-attachments')
-        .upload(fileName, { uri: fileUri, type: fileType || 'image/jpeg', name: fileName });
-      
-      if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from('report-attachments').getPublicUrl(fileName);
-      fileUrl = publicUrl;
+      const { data, error } = await supabase
+        .from('reports')
+        .insert(records)
+        .select('*, users(name)');
+
+      if (error) throw error;
+      return data;
     }
 
+    // Single report logic (legacy/fallback)
+    const { userId, title, description, client_name, phone_number, call_action, reaction } = reportData;
     const { data, error } = await supabase
       .from('reports')
       .insert({
         user_id: userId,
         title: title || `Call with ${client_name}`,
         description,
-        file_url: fileUrl,
         date: today,
         client_name,
         phone_number,
