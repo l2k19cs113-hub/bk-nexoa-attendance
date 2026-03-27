@@ -52,7 +52,7 @@ export default function ProfileScreen() {
     { icon: 'notifications-outline', label: 'Notifications', action: null, toggle: true, value: notifications, onChange: setNotifications },
     { icon: 'moon-outline', label: 'Dark Mode', action: null, toggle: true, value: darkMode, onChange: setDarkMode },
     { icon: 'help-circle-outline', label: 'Help & Support', action: () => Alert.alert('Support', 'Contact: support@bknexoa.com') },
-    { icon: 'information-circle-outline', label: 'About App', action: () => Alert.alert('BK Nexoa Tech Attendance', 'Version 1.0.0\n\nBuilt for teams that value productivity.') },
+    { icon: 'information-circle-outline', label: 'About App', action: () => Alert.alert('BK Nexoa Tech Attendance', 'Version 1.1.0\n\nBuilt for teams that value productivity.') },
   ];
 
   return (
@@ -104,6 +104,35 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Bank Details Section */}
+        <View style={styles.bankSection}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="business-outline" size={18} color={COLORS.primary} />
+            <Text style={styles.sectionTitle}>Bank Account Details</Text>
+          </View>
+          <View style={styles.bankCard}>
+            <View style={styles.bankRow}>
+              <Text style={styles.bankLabel}>Bank Name</Text>
+              <Text style={styles.bankValue}>{profile?.bank_name || 'Not provided'}</Text>
+            </View>
+            <View style={styles.bankDivider} />
+            <View style={styles.bankRow}>
+              <Text style={styles.bankLabel}>Account Number</Text>
+              <Text style={styles.bankValue}>{profile?.account_no || 'Not provided'}</Text>
+            </View>
+            <View style={styles.bankDivider} />
+            <View style={styles.bankRow}>
+              <Text style={styles.bankLabel}>IFSC Code</Text>
+              <Text style={styles.bankValue}>{profile?.ifsc_code || 'Not provided'}</Text>
+            </View>
+            <View style={styles.bankDivider} />
+            <View style={styles.bankRow}>
+              <Text style={styles.bankLabel}>Branch</Text>
+              <Text style={styles.bankValue}>{profile?.branch_name || 'Not provided'}</Text>
+            </View>
+          </View>
+        </View>
+
         {/* Menu Items */}
         <View style={styles.menuSection}>
           <Text style={styles.menuSectionTitle}>Account Settings</Text>
@@ -141,7 +170,7 @@ export default function ProfileScreen() {
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
 
-        <Text style={styles.footer}>BK Nexoa Tech Attendance • v1.0.0</Text>
+        <Text style={styles.footer}>BK Nexoa Tech Attendance • v1.1.0</Text>
         <View style={{ height: 80 }} />
       </ScrollView>
     </View>
@@ -172,6 +201,14 @@ const styles = StyleSheet.create({
   cancelBtnText: { color: COLORS.textMuted, fontWeight: '600' },
   saveBtn: { height: 42, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
   saveBtnText: { color: '#fff', fontWeight: '700' },
+  bankSection: { marginBottom: 20 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  sectionTitle: { fontSize: 13, fontWeight: '800', color: COLORS.primary, textTransform: 'uppercase', letterSpacing: 1 },
+  bankCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, padding: 16, borderWidth: 1, borderColor: COLORS.border },
+  bankRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  bankLabel: { fontSize: 12, color: COLORS.textMuted },
+  bankValue: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  bankDivider: { height: 1, backgroundColor: COLORS.border, marginVertical: 4 },
   menuSection: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.border, marginBottom: 16, overflow: 'hidden' },
   menuSectionTitle: { fontSize: 12, fontWeight: '700', color: COLORS.textMuted, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4, textTransform: 'uppercase', letterSpacing: 1 },
   menuRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },

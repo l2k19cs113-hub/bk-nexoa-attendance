@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, StatusBar, Alert, Modal, TextInput,
-  ActivityIndicator,
+  ActivityIndicator, ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +16,12 @@ export default function EmployeeManagementScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newUser, setNewUser] = useState({ name: '', email: '', password: '' });
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedEmp, setSelectedEmp] = useState(null);
+  const [newUser, setNewUser] = useState({
+    name: '', email: '', password: '',
+    bank_name: '', account_no: '', ifsc_code: '', branch_name: ''
+  });
   const [adding, setAdding] = useState(false);
 
   const load = async () => {
@@ -57,14 +62,15 @@ export default function EmployeeManagementScreen() {
 
   const handleAdd = async () => {
     if (!newUser.name || !newUser.email || !newUser.password) {
-      Alert.alert('Missing Fields', 'Please fill all fields.'); return;
+      Alert.alert('Missing Fields', 'Please fill name, email and password.'); return;
     }
     try {
       setAdding(true);
       await authApi.signUp({ ...newUser, role: 'employee' });
       setShowAddModal(false);
-      setNewUser({ name: '', email: '', password: '' });
+      setNewUser({ name: '', email: '', password: '', bank_name: '', account_no: '', ifsc_code: '', branch_name: '' });
       await load();
+      Alert.alert('Success', 'Employee added successfully');
     } catch (err) {
       Alert.alert('Error', err.message || 'Could not add employee.');
     } finally {
@@ -87,9 +93,17 @@ export default function EmployeeManagementScreen() {
         <Text style={styles.rowEmail}>{item.email}</Text>
         <Text style={styles.rowDate}>Joined {format(new Date(item.created_at), 'MMM d, yyyy')}</Text>
       </View>
-      <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item)}>
-        <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
-      </TouchableOpacity>
+      <View style={styles.rowActions}>
+        <TouchableOpacity
+          style={styles.bankBtn}
+          onPress={() => { setSelectedEmp(item); setShowDetailsModal(true); }}
+        >
+          <Ionicons name="card-outline" size={16} color={COLORS.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item)}>
+          <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -119,11 +133,6 @@ export default function EmployeeManagementScreen() {
           value={search}
           onChangeText={setSearch}
         />
-        {search ? (
-          <TouchableOpacity onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
-          </TouchableOpacity>
-        ) : null}
       </View>
 
       {loading ? (
@@ -149,43 +158,111 @@ export default function EmployeeManagementScreen() {
       {/* Add Modal */}
       <Modal visible={showAddModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}>
+            <View style={styles.modalCard}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Add New Employee</Text>
+                <TouchableOpacity onPress={() => setShowAddModal(false)}>
+                  <Ionicons name="close" size={22} color={COLORS.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.sectionTitle}>Login Credentials</Text>
+              {[
+                { label: 'Full Name', key: 'name', icon: 'person-outline', placeholder: 'John Doe' },
+                { label: 'Email', key: 'email', icon: 'mail-outline', placeholder: 'john@company.com', keyboard: 'email-address' },
+                { label: 'Password', key: 'password', icon: 'lock-closed-outline', placeholder: 'Min 6 chars', secure: true },
+              ].map(({ label, key, icon, placeholder, keyboard, secure }) => (
+                <View key={key} style={styles.modalField}>
+                  <Text style={styles.modalLabel}>{label}</Text>
+                  <View style={styles.modalInput}>
+                    <Ionicons name={icon} size={16} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+                    <TextInput
+                      style={styles.modalInputText}
+                      placeholder={placeholder}
+                      placeholderTextColor={COLORS.textMuted}
+                      value={newUser[key]}
+                      onChangeText={(v) => setNewUser((u) => ({ ...u, [key]: v }))}
+                      keyboardType={keyboard || 'default'}
+                      autoCapitalize={keyboard === 'email-address' ? 'none' : 'words'}
+                      secureTextEntry={secure}
+                    />
+                  </View>
+                </View>
+              ))}
+
+              <Text style={[styles.sectionTitle, { marginTop: 10 }]}>Bank Account Details (Optional)</Text>
+              {[
+                { label: 'Bank Name', key: 'bank_name', icon: 'business-outline', placeholder: 'SBI, HDFC, etc.' },
+                { label: 'Account Number', key: 'account_no', icon: 'card-outline', placeholder: '1234567890' },
+                { label: 'IFSC Code', key: 'ifsc_code', icon: 'barcode-outline', placeholder: 'SBIN000XXXX' },
+                { label: 'Branch Name', key: 'branch_name', icon: 'map-outline', placeholder: 'New Delhi' },
+              ].map(({ label, key, icon, placeholder }) => (
+                <View key={key} style={styles.modalField}>
+                  <Text style={styles.modalLabel}>{label}</Text>
+                  <View style={styles.modalInput}>
+                    <Ionicons name={icon} size={16} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+                    <TextInput
+                      style={styles.modalInputText}
+                      placeholder={placeholder}
+                      placeholderTextColor={COLORS.textMuted}
+                      value={newUser[key]}
+                      onChangeText={(v) => setNewUser((u) => ({ ...u, [key]: v }))}
+                    />
+                  </View>
+                </View>
+              ))}
+
+              <TouchableOpacity onPress={handleAdd} disabled={adding} activeOpacity={0.85}>
+                <LinearGradient colors={COLORS.gradientPrimary} style={styles.modalBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                  {adding ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalBtnText}>Add Employee</Text>}
+                </LinearGradient>
+              </TouchableOpacity>
+              <View style={{ height: 20 }} />
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Details Modal */}
+      <Modal visible={showDetailsModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={{ flex: 1 }} onPress={() => setShowDetailsModal(false)} />
+          <View style={styles.modalDetailsCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add New Employee</Text>
-              <TouchableOpacity onPress={() => setShowAddModal(false)}>
+              <Text style={styles.modalTitle}>Bank Account Details</Text>
+              <TouchableOpacity onPress={() => setShowDetailsModal(false)}>
                 <Ionicons name="close" size={22} color={COLORS.textMuted} />
               </TouchableOpacity>
             </View>
-            {[
-              { label: 'Full Name', key: 'name', icon: 'person-outline', placeholder: 'John Doe' },
-              { label: 'Email', key: 'email', icon: 'mail-outline', placeholder: 'john@company.com', keyboard: 'email-address' },
-              { label: 'Password', key: 'password', icon: 'lock-closed-outline', placeholder: 'Min 6 chars', secure: true },
-            ].map(({ label, key, icon, placeholder, keyboard, secure }) => (
-              <View key={key} style={styles.modalField}>
-                <Text style={styles.modalLabel}>{label}</Text>
-                <View style={styles.modalInput}>
-                  <Ionicons name={icon} size={16} color={COLORS.textMuted} style={{ marginRight: 8 }} />
-                  <TextInput
-                    style={styles.modalInputText}
-                    placeholder={placeholder}
-                    placeholderTextColor={COLORS.textMuted}
-                    value={newUser[key]}
-                    onChangeText={(v) => setNewUser((u) => ({ ...u, [key]: v }))}
-                    keyboardType={keyboard || 'default'}
-                    autoCapitalize={keyboard === 'email-address' ? 'none' : 'words'}
-                    secureTextEntry={secure}
-                  />
-                </View>
-              </View>
-            ))}
-            <TouchableOpacity onPress={handleAdd} disabled={adding} activeOpacity={0.85}>
-              <LinearGradient colors={COLORS.gradientPrimary} style={styles.modalBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-                {adding ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalBtnText}>Add Employee</Text>}
-              </LinearGradient>
+            <View style={styles.bankDetailRow}>
+              <Text style={styles.bankDetailLabel}>Employee Name:</Text>
+              <Text style={styles.bankDetailValue}>{selectedEmp?.name}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.bankDetailRow}>
+              <Text style={styles.bankDetailLabel}>Bank Name:</Text>
+              <Text style={styles.bankDetailValue}>{selectedEmp?.bank_name || 'Not provided'}</Text>
+            </View>
+            <View style={styles.bankDetailRow}>
+              <Text style={styles.bankDetailLabel}>Account Number:</Text>
+              <Text style={styles.bankDetailValue}>{selectedEmp?.account_no || 'Not provided'}</Text>
+            </View>
+            <View style={styles.bankDetailRow}>
+              <Text style={styles.bankDetailLabel}>IFSC Code:</Text>
+              <Text style={styles.bankDetailValue}>{selectedEmp?.ifsc_code || 'Not provided'}</Text>
+            </View>
+            <View style={styles.bankDetailRow}>
+              <Text style={styles.bankDetailLabel}>Branch:</Text>
+              <Text style={styles.bankDetailValue}>{selectedEmp?.branch_name || 'Not provided'}</Text>
+            </View>
+            <TouchableOpacity style={styles.closeBtn} onPress={() => setShowDetailsModal(false)}>
+              <Text style={styles.closeBtnText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
     </View>
   );
 }
@@ -196,61 +273,40 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#fff' },
   headerSub: { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
   addBtn: { marginTop: 14, alignSelf: 'flex-start' },
-  addBtnInner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 16, paddingVertical: 10, borderRadius: RADIUS.md,
-  },
+  addBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: RADIUS.md },
   addBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  searchWrapper: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.bgCard, margin: 16,
-    borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 10,
-    borderWidth: 1, borderColor: COLORS.border, gap: 10,
-  },
+  searchWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgCard, margin: 16, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: COLORS.border, gap: 10 },
   searchInput: { flex: 1, color: '#fff', fontSize: 14 },
   list: { paddingHorizontal: 16, paddingBottom: 100 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  row: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg,
-    padding: 14, marginBottom: 10, borderWidth: 1, borderColor: COLORS.border,
-  },
-  rowAvatar: {
-    width: 46, height: 46, borderRadius: 14,
-    justifyContent: 'center', alignItems: 'center',
-  },
+  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: COLORS.border },
+  rowAvatar: { width: 46, height: 46, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   rowAvatarText: { fontSize: 18, fontWeight: '700', color: '#fff' },
   rowInfo: { flex: 1, marginLeft: 12 },
   rowName: { fontSize: 15, fontWeight: '700', color: '#fff' },
   rowEmail: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   rowDate: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
-  deleteBtn: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: `${COLORS.danger}15`,
-    justifyContent: 'center', alignItems: 'center',
-  },
+  rowActions: { flexDirection: 'row', gap: 8 },
+  bankBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: `${COLORS.primary}20`, justifyContent: 'center', alignItems: 'center' },
+  deleteBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: `${COLORS.danger}15`, justifyContent: 'center', alignItems: 'center' },
   emptyState: { flex: 1, alignItems: 'center', paddingTop: 80, gap: 10 },
   emptyText: { fontSize: 14, color: COLORS.textMuted },
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    backgroundColor: COLORS.bgCard, borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    padding: 24, borderTopWidth: 1, borderColor: COLORS.border,
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: COLORS.bgCard, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, borderTopWidth: 1, borderColor: COLORS.border },
+  modalDetailsCard: { backgroundColor: COLORS.bgCard, borderRadius: 28, padding: 24, marginHorizontal: 20, marginBottom: 40, borderWidth: 1, borderColor: COLORS.border },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
+  sectionTitle: { fontSize: 12, fontWeight: '800', color: COLORS.primary, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 },
   modalField: { marginBottom: 14 },
   modalLabel: { fontSize: 12, color: COLORS.textMuted, fontWeight: '600', marginBottom: 6 },
-  modalInput: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md,
-    borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, height: 46,
-  },
+  modalInput: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, height: 46 },
   modalInputText: { flex: 1, color: '#fff', fontSize: 14 },
-  modalBtn: {
-    height: 50, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', marginTop: 8,
-  },
+  modalBtn: { height: 50, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   modalBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  bankDetailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  bankDetailLabel: { color: COLORS.textMuted, fontSize: 13 },
+  bankDetailValue: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 12 },
+  closeBtn: { marginTop: 20, height: 44, borderRadius: 12, backgroundColor: COLORS.bgInput, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border },
+  closeBtnText: { color: '#fff', fontWeight: '700' },
 });

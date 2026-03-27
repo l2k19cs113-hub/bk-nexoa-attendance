@@ -3,7 +3,7 @@ import supabase from './supabase';
 // ─── AUTH API ────────────────────────────────────────────────────────────────
 
 export const authApi = {
-  signUp: async ({ email, password, name, role = 'employee' }) => {
+  signUp: async ({ email, password, name, role = 'employee', bank_name, account_no, ifsc_code, branch_name }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -17,6 +17,10 @@ export const authApi = {
         name,
         email,
         role,
+        bank_name,
+        account_no,
+        ifsc_code,
+        branch_name,
       });
       if (profileError) throw profileError;
     }
