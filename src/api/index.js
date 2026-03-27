@@ -245,34 +245,35 @@ export const attendanceApi = {
 // ─── REPORTS API ─────────────────────────────────────────────────────────────
 
 export const reportsApi = {
-  submitReport: async ({ userId, title, description, fileUri, fileType }) => {
-    const today = new Date().toISOString().split('T')[0];
+  submitReport: async ({ userId, title, description, fileUri, fileType, client_name, phone_number, call_action, reaction }) => {
+    const today = new Date().toLocaleDateString('en-CA');
     let fileUrl = null;
 
     if (fileUri) {
-      const fileName = `${userId}/${today}_${Date.now()}.${fileType?.split('/')[1] || 'jpg'}`;
-      const response = await fetch(fileUri);
-      const blob = await response.blob();
-      const { error: uploadError } = await supabase.storage
-        .from('report-files')
-        .upload(fileName, blob, { contentType: fileType, upsert: false });
-
+      const fileName = `${userId}_${Date.now()}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('report-attachments')
+        .upload(fileName, { uri: fileUri, type: fileType || 'image/jpeg', name: fileName });
+      
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from('report-files').getPublicUrl(fileName);
-      fileUrl = urlData.publicUrl;
+      const { data: { publicUrl } } = supabase.storage.from('report-attachments').getPublicUrl(fileName);
+      fileUrl = publicUrl;
     }
 
     const { data, error } = await supabase
       .from('reports')
       .insert({
         user_id: userId,
-        date: today,
-        title,
+        title: title || `Call with ${client_name}`,
         description,
         file_url: fileUrl,
-        status: 'pending',
+        date: today,
+        client_name,
+        phone_number,
+        call_action,
+        reaction
       })
-      .select()
+      .select('*, users(name)')
       .single();
 
     if (error) throw error;
