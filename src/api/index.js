@@ -169,13 +169,15 @@ export const attendanceApi = {
   },
 
   getTodayAttendance: async (userId) => {
-    const today = new Date().toISOString().split('T')[0];
+    // Get local date (YYYY-MM-DD)
+    const today = new Date().toLocaleDateString('en-CA');
+    
     const { data, error } = await supabase
       .from('attendance')
       .select('*, users(name, email)')
       .eq('user_id', userId)
       .eq('date', today)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') throw error;
     return data;
