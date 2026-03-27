@@ -119,16 +119,18 @@ export const usersApi = {
 
 export const attendanceApi = {
   checkIn: async ({ userId, location }) => {
-    const today = new Date().toISOString().split('T')[0];
-    const now = new Date().toISOString();
+    // Get local date (YYYY-MM-DD)
+    const now = new Date();
+    const today = now.toLocaleDateString('en-CA'); // 'en-CA' gives YYYY-MM-DD format
+    const currentTime = now.toISOString();
 
     // Check if already checked in today
     const { data: existing } = await supabase
       .from('attendance')
-      .select('*')
+      .select('id')
       .eq('user_id', userId)
       .eq('date', today)
-      .single();
+      .maybeSingle();
 
     if (existing) throw new Error('Already checked in today');
 
@@ -137,9 +139,9 @@ export const attendanceApi = {
       .insert({
         user_id: userId,
         date: today,
-        check_in_time: now,
-        location: location ? `${location.latitude},${location.longitude}` : null,
-        check_in_address: location?.address || null,
+        check_in_time: currentTime,
+        location: location ? `${location.latitude},${location.longitude}` : 'Manual/Web',
+        check_in_address: location?.address || 'Web Check-in',
       })
       .select()
       .single();
@@ -149,12 +151,13 @@ export const attendanceApi = {
   },
 
   checkOut: async ({ userId }) => {
-    const today = new Date().toISOString().split('T')[0];
-    const now = new Date().toISOString();
+    const now = new Date();
+    const today = now.toLocaleDateString('en-CA');
+    const currentTime = now.toISOString();
 
     const { data, error } = await supabase
       .from('attendance')
-      .update({ check_out_time: now })
+      .update({ check_out_time: currentTime })
       .eq('user_id', userId)
       .eq('date', today)
       .is('check_out_time', null)
