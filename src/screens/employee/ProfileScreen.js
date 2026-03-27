@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  StatusBar, Alert, ActivityIndicator, TextInput, Switch,
+  StatusBar, Alert, ActivityIndicator, TextInput, Switch, Platform
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { format } from 'date-fns';
 import { COLORS, RADIUS } from '../../constants';
 import useAuthStore from '../../store/authStore';
@@ -19,14 +18,18 @@ export default function ProfileScreen() {
   const [notifications, setNotifications] = useState(true);
 
   const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign Out', style: 'destructive', onPress: signOut },
-      ]
-    );
+    if (Platform.OS === 'web') {
+      signOut();
+    } else {
+      Alert.alert(
+        'Sign Out',
+        'Are you sure you want to sign out?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign Out', style: 'destructive', onPress: signOut },
+        ]
+      );
+    }
   };
 
   const handleSave = async () => {
@@ -62,9 +65,6 @@ export default function ProfileScreen() {
           <View style={styles.avatarWrapper}>
             <Text style={styles.avatarText}>{(profile?.name || 'U')[0].toUpperCase()}</Text>
           </View>
-          <TouchableOpacity style={styles.avatarEdit}>
-            <Ionicons name="camera" size={14} color="#fff" />
-          </TouchableOpacity>
         </View>
         <Text style={styles.profileName}>{profile?.name}</Text>
         <Text style={styles.profileEmail}>{profile?.email}</Text>
@@ -135,24 +135,6 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Stats */}
-        <View style={styles.statsCard}>
-          <Text style={styles.menuSectionTitle}>Quick Stats</Text>
-          <View style={styles.statsRow}>
-            {[
-              { label: 'Days Present', value: '--', icon: 'calendar-outline', color: COLORS.primary },
-              { label: 'Reports Filed', value: '--', icon: 'document-text-outline', color: COLORS.success },
-              { label: 'Approved', value: '--', icon: 'checkmark-circle-outline', color: COLORS.secondary },
-            ].map((s) => (
-              <View key={s.label} style={styles.statBox}>
-                <Ionicons name={s.icon} size={18} color={s.color} />
-                <Text style={[styles.statVal, { color: s.color }]}>{s.value}</Text>
-                <Text style={styles.statLbl}>{s.label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
         {/* Sign Out */}
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
           <Ionicons name="log-out-outline" size={18} color={COLORS.danger} />
@@ -168,80 +150,36 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgDark },
-  header: {
-    paddingTop: 56, paddingBottom: 28, alignItems: 'center',
-    paddingHorizontal: 20,
-  },
+  header: { paddingTop: 56, paddingBottom: 28, alignItems: 'center', paddingHorizontal: 20 },
   avatarSection: { position: 'relative', marginBottom: 14 },
   avatarWrapper: {
-    width: 88, height: 88, borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 3, borderColor: 'rgba(255,255,255,0.3)',
+    width: 88, height: 88, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.3)',
   },
   avatarText: { fontSize: 36, fontWeight: '800', color: '#fff' },
-  avatarEdit: {
-    position: 'absolute', bottom: -4, right: -4,
-    width: 28, height: 28, borderRadius: 8,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center', alignItems: 'center',
-  },
   profileName: { fontSize: 22, fontWeight: '800', color: '#fff' },
   profileEmail: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 3 },
-  roleBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 5,
-    borderRadius: 99, marginTop: 10,
-  },
+  roleBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 99, marginTop: 10 },
   roleText: { fontSize: 12, color: '#fff', fontWeight: '700' },
   joinDate: { fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 8 },
   body: { flex: 1, padding: 16 },
-  editCard: {
-    backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg,
-    padding: 16, borderWidth: 1, borderColor: COLORS.primary, marginBottom: 16,
-  },
+  editCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg, padding: 16, borderWidth: 1, borderColor: COLORS.primary, marginBottom: 16 },
   editTitle: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 12 },
-  editField: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md,
-    borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, height: 46, marginBottom: 12,
-  },
+  editField: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, height: 46, marginBottom: 12 },
   editInput: { flex: 1, color: '#fff', fontSize: 14 },
   editActions: { flexDirection: 'row', gap: 10 },
-  cancelBtn: {
-    flex: 1, height: 42, borderRadius: RADIUS.md,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: COLORS.bgInput, borderWidth: 1, borderColor: COLORS.border,
-  },
+  cancelBtn: { flex: 1, height: 42, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bgInput, borderWidth: 1, borderColor: COLORS.border },
   cancelBtnText: { color: COLORS.textMuted, fontWeight: '600' },
   saveBtn: { height: 42, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
   saveBtnText: { color: '#fff', fontWeight: '700' },
-  menuSection: {
-    backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl,
-    borderWidth: 1, borderColor: COLORS.border, marginBottom: 16, overflow: 'hidden',
-  },
+  menuSection: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.border, marginBottom: 16, overflow: 'hidden' },
   menuSectionTitle: { fontSize: 12, fontWeight: '700', color: COLORS.textMuted, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4, textTransform: 'uppercase', letterSpacing: 1 },
-  menuRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
+  menuRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
   menuRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
   menuLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  menuIconBox: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: `${COLORS.primary}20`, justifyContent: 'center', alignItems: 'center',
-  },
+  menuIconBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: `${COLORS.primary}20`, justifyContent: 'center', alignItems: 'center' },
   menuLabel: { fontSize: 14, color: '#fff', fontWeight: '500' },
-  statsCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.border, marginBottom: 16, paddingBottom: 14 },
-  statsRow: { flexDirection: 'row', padding: 12, gap: 8 },
-  statBox: { flex: 1, alignItems: 'center', gap: 4 },
-  statVal: { fontSize: 20, fontWeight: '800' },
-  statLbl: { fontSize: 10, color: COLORS.textMuted, textAlign: 'center' },
-  signOutBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    backgroundColor: `${COLORS.danger}15`, borderRadius: RADIUS.lg,
-    padding: 16, marginBottom: 16, borderWidth: 1, borderColor: `${COLORS.danger}30`,
-  },
+  signOutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: `${COLORS.danger}15`, borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: `${COLORS.danger}30` },
   signOutText: { fontSize: 15, fontWeight: '700', color: COLORS.danger },
   footer: { textAlign: 'center', fontSize: 11, color: COLORS.textMuted, marginBottom: 8 },
 });

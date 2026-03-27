@@ -27,17 +27,27 @@ const useAttendanceStore = create((set, get) => ({
   },
 
   checkIn: async (userId, location) => {
-    set({ isLoading: true });
-    const record = await attendanceApi.checkIn({ userId, location });
-    set({ todayRecord: record, isCheckedIn: true, isLoading: false });
-    return record;
+    try {
+      set({ isLoading: true });
+      const record = await attendanceApi.checkIn({ userId, location });
+      set({ todayRecord: record, isCheckedIn: true, isLoading: false });
+      return record;
+    } catch (err) {
+      set({ isLoading: false });
+      throw err;
+    }
   },
 
   checkOut: async (userId) => {
-    set({ isLoading: true });
-    const record = await attendanceApi.checkOut({ userId });
-    set({ todayRecord: record, isCheckedOut: true, isLoading: false });
-    return record;
+    try {
+      set({ isLoading: true });
+      const record = await attendanceApi.checkOut({ userId });
+      set({ todayRecord: record, isCheckedOut: true, isLoading: false });
+      return record;
+    } catch (err) {
+      set({ isLoading: false });
+      throw err;
+    }
   },
 
   fetchHistory: async (userId, startDate, endDate) => {

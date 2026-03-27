@@ -6,6 +6,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
+import { useNavigation } from '@react-navigation/native';
 import { COLORS, RADIUS } from '../../constants';
 import useAuthStore from '../../store/authStore';
 import useAttendanceStore from '../../store/attendanceStore';
@@ -14,6 +15,7 @@ import useReportsStore from '../../store/reportsStore';
 const { width } = Dimensions.get('window');
 
 export default function EmployeeDashboardScreen() {
+  const navigation = useNavigation();
   const { profile } = useAuthStore();
   const { fetchTodayAttendance, todayRecord, isCheckedIn, isCheckedOut } = useAttendanceStore();
   const { fetchMyReports, myReports } = useReportsStore();
@@ -122,10 +124,12 @@ export default function EmployeeDashboardScreen() {
             { icon: 'calendar', label: 'View History', color: COLORS.gradientSecondary, screen: 'History' },
             { icon: 'document-text', label: 'My Reports', color: COLORS.gradientAccent, screen: 'ReportHistory' },
           ].map((action) => (
-            <LinearGradient key={action.label} colors={action.color} style={styles.actionCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-              <Ionicons name={action.icon} size={28} color="#fff" />
-              <Text style={styles.actionLabel}>{action.label}</Text>
-            </LinearGradient>
+            <TouchableOpacity key={action.label} activeOpacity={0.8} onPress={() => navigation.navigate(action.screen)}>
+              <LinearGradient colors={action.color} style={styles.actionCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <Ionicons name={action.icon} size={28} color="#fff" />
+                <Text style={styles.actionLabel}>{action.label}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           ))}
         </View>
 
