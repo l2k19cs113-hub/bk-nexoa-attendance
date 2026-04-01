@@ -18,6 +18,7 @@ export default function AttendanceHistoryScreen() {
   const [markedDates, setMarkedDates] = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [currentVisibleMonth, setCurrentVisibleMonth] = useState(new Date());
 
   const load = async () => {
     if (!profile?.id) return;
@@ -47,6 +48,10 @@ export default function AttendanceHistoryScreen() {
     setSelectedRecord(record || null);
   };
 
+  const onMonthChange = (month) => {
+    setCurrentVisibleMonth(new Date(month.year, month.month - 1));
+  };
+
   const getDuration = (checkIn, checkOut) => {
     if (!checkIn || !checkOut) return null;
     const ms = new Date(checkOut) - new Date(checkIn);
@@ -55,8 +60,12 @@ export default function AttendanceHistoryScreen() {
     return `${hrs}h ${mins}m`;
   };
 
-  const presentDays = history.filter((r) => r.check_in_time).length;
-  const fullDays = history.filter((r) => r.check_in_time && r.check_out_time).length;
+  const monthStr = format(currentVisibleMonth, 'yyyy-MM');
+  const monthlyHistory = history.filter((r) => r.date?.startsWith(monthStr));
+
+  const presentDays = monthlyHistory.filter((r) => r.check_in_time).length;
+  const fullDays = monthlyHistory.filter((r) => r.check_in_time && r.check_out_time).length;
+  const totalLogged = monthlyHistory.length;
 
   return (
     <View style={styles.container}>
@@ -76,7 +85,7 @@ export default function AttendanceHistoryScreen() {
           {[
             { label: 'Present Days', value: presentDays, icon: 'checkmark-circle', color: COLORS.success },
             { label: 'Completed', value: fullDays, icon: 'checkmark-done', color: COLORS.primary },
-            { label: 'Total Logged', value: history.length, icon: 'calendar', color: COLORS.secondary },
+            { label: 'Total Logged', value: totalLogged, icon: 'calendar', color: COLORS.secondary },
           ].map((item) => (
             <View key={item.label} style={styles.summaryCard}>
               <View style={[styles.summaryIcon, { backgroundColor: `${item.color}20` }]}>
@@ -97,6 +106,7 @@ export default function AttendanceHistoryScreen() {
               ...(selectedDate ? { [selectedDate]: { ...markedDates[selectedDate], selected: true, selectedColor: COLORS.primary } } : {}),
             }}
             onDayPress={onDayPress}
+            onMonthChange={onMonthChange}
             theme={{
               backgroundColor: COLORS.bgCard,
               calendarBackground: COLORS.bgCard,
