@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, StatusBar, Alert, ActivityIndicator, ScrollView,
+  RefreshControl, StatusBar, Alert, ActivityIndicator, ScrollView, TextInput
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { COLORS, RADIUS } from '../../constants';
 import { usersApi, attendanceApi, salariesApi } from '../../api';
+import { generatePayslipPDF } from '../../utils/pdfGenerator';
 
 export default function SalaryManagementScreen() {
   const [employees, setEmployees] = useState([]);
@@ -15,6 +16,9 @@ export default function SalaryManagementScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [generating, setGenerating] = useState(null);
+  const [selectedForEdit, setSelectedForEdit] = useState(null);
+  const [editValues, setEditValues] = useState({ bonus: '0', deduction: '0' });
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
@@ -85,6 +89,54 @@ export default function SalaryManagementScreen() {
     }
   };
 
+  const handleUpdateAdjustment = async () => {
+    try {
+      setLoading(true);
+      const employee = selectedForEdit;
+      const salaryRecord = await salariesApi.generateSalary({
+        userId: employee.id,
+        month: currentMonth,
+        year: currentYear,
+        baseSalary: employee.base_salary,
+        absentDeduction: Number(editValues.deduction),
+        bonus: Number(editValues.bonus)
+      });
+      setSalaries(prev => ({ ...prev, [employee.id]: salaryRecord }));
+      setShowEditModal(false);
+      Alert.alert('Success', 'Salary adjustments saved.');
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openAdjustModal = (employee) => {
+    const existing = salaries[employee.id];
+    setSelectedForEdit(employee);
+    setEditValues({
+      bonus: existing?.bonus?.toString() || '0',
+      deduction: existing?.absent_deduction?.toString() || '0'
+    });
+    setShowEditModal(true);
+  };
+
+  const handleViewPdf = async (employee) => {
+    const salary = salaries[employee.id];
+    if (!salary) return;
+    try {
+      setLoading(true);
+      const startDate = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+      const endDate = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+      const attendance = await attendanceApi.getUserAttendance(employee.id, startDate, endDate);
+      await generatePayslipPDF(employee, salary, attendance);
+    } catch (err) {
+      Alert.alert('Error', 'Could not generate PDF');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderEmployee = ({ item }) => {
     const salary = salaries[item.id];
     const isGenerating = generating === item.id;
@@ -120,20 +172,32 @@ export default function SalaryManagementScreen() {
           </View>
         )}
 
-        <TouchableOpacity 
-          style={[styles.actionBtn, salary && styles.secondaryBtn]} 
-          onPress={() => handleGenerateSalary(item)}
-          disabled={isGenerating}
-        >
-          {isGenerating ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Ionicons name={salary ? "refresh-outline" : "calculator-outline"} size={16} color="#fff" />
-              <Text style={styles.actionBtnText}>{salary ? "Recalculate" : "Generate Salary"}</Text>
-            </>
+        <View style={styles.cardActions}>
+          <TouchableOpacity 
+            style={[styles.actionBtn, salary && styles.secondaryBtn, { flex: 2 }]} 
+            onPress={() => handleGenerateSalary(item)}
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Ionicons name={salary ? "refresh-outline" : "calculator-outline"} size={16} color={salary ? COLORS.textMuted : "#fff"} />
+                <Text style={[styles.actionBtnText, salary && { color: COLORS.textMuted }]}>{salary ? "Auto-Recalculate" : "Generate Salary"}</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          {salary && (
+             <>
+               <TouchableOpacity style={styles.adjustBtn} onPress={() => openAdjustModal(item)}>
+                 <Ionicons name="options-outline" size={18} color="#fff" />
+               </TouchableOpacity>
+               <TouchableOpacity style={styles.pdfBtn} onPress={() => handleViewPdf(item)}>
+                 <Ionicons name="document-text-outline" size={18} color="#fff" />
+               </TouchableOpacity>
+             </>
           )}
-        </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -165,6 +229,42 @@ export default function SalaryManagementScreen() {
           }
         />
       )}
+
+      {/* Adjustment Modal */}
+      <View>
+        {showEditModal && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Adjust Salary: {selectedForEdit?.name}</Text>
+              
+              <Text style={styles.modalLabel}>Performance Bonus (₹)</Text>
+              <TextInput 
+                style={styles.modalInput} 
+                keyboardType="numeric" 
+                value={editValues.bonus}
+                onChangeText={(v) => setEditValues(e => ({...e, bonus: v}))}
+              />
+
+              <Text style={styles.modalLabel}>Deductions / Penalties (₹)</Text>
+              <TextInput 
+                style={styles.modalInput} 
+                keyboardType="numeric" 
+                value={editValues.deduction}
+                onChangeText={(v) => setEditValues(e => ({...e, deduction: v}))}
+              />
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.modalCancel} onPress={() => setShowEditModal(false)}>
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalSave} onPress={handleUpdateAdjustment}>
+                  <Text style={styles.modalSaveText}>Save Adjustment</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -188,8 +288,21 @@ const styles = StyleSheet.create({
   detailValue: { fontSize: 12, color: '#fff', fontWeight: '600' },
   actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: COLORS.primary, height: 44, borderRadius: RADIUS.md },
   secondaryBtn: { backgroundColor: COLORS.bgInput, borderWidth: 1, borderColor: COLORS.border },
-  actionBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  actionBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  cardActions: { flexDirection: 'row', gap: 8 },
+  adjustBtn: { width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: COLORS.info, justifyContent: 'center', alignItems: 'center' },
+  pdfBtn: { width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: COLORS.secondary, justifyContent: 'center', alignItems: 'center' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyState: { alignItems: 'center', marginTop: 100, gap: 10 },
   emptyText: { color: COLORS.textMuted, fontSize: 14 },
+  modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
+  modalContent: { backgroundColor: COLORS.bgCard, width: '85%', borderRadius: RADIUS.xl, padding: 24, borderWidth: 1, borderColor: COLORS.border },
+  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 20 },
+  modalLabel: { color: COLORS.textMuted, fontSize: 12, marginBottom: 8 },
+  modalInput: { backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, height: 48, paddingHorizontal: 12, color: '#fff', fontSize: 16, marginBottom: 16, borderWidth: 1, borderColor: COLORS.border },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  modalCancel: { flex: 1, height: 48, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.bgInput },
+  modalCancelText: { color: COLORS.textMuted, fontWeight: '600' },
+  modalSave: { flex: 2, height: 48, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.primary },
+  modalSaveText: { color: '#fff', fontWeight: '700' },
 });
