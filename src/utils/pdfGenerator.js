@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { format } from 'date-fns';
@@ -258,8 +259,12 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
   `;
 
   try {
-    const { uri } = await Print.printToFileAsync({ html });
-    await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+    if (Platform.OS === 'web') {
+      await Print.printAsync({ html });
+    } else {
+      const { uri } = await Print.printToFileAsync({ html });
+      await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+    }
   } catch (err) {
     console.error('PDF Generation failed:', err);
     throw new Error('Failed to generate PDF');
