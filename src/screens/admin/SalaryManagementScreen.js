@@ -274,55 +274,62 @@ export default function SalaryManagementScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-              <Text style={styles.empNameTag}>{selectedForEdit?.name}</Text>
-              
-              <Text style={styles.modalLabel}>Monthly Base Salary (₹)</Text>
-              <TextInput 
-                style={styles.modalInput} 
-                keyboardType="numeric" 
-                placeholder="e.g. 25000"
-                placeholderTextColor={COLORS.textMuted}
-                value={editValues.base_salary}
-                onChangeText={(v) => setEditValues(e => ({...e, base_salary: v}))}
-              />
-
-              <Text style={styles.modalLabel}>Performance Bonus (₹)</Text>
-              <TextInput 
-                style={styles.modalInput} 
-                keyboardType="numeric" 
-                value={editValues.bonus}
-                onChangeText={(v) => setEditValues(e => ({...e, bonus: v}))}
-              />
-
-              <Text style={styles.modalLabel}>Deductions / Penalties (₹)</Text>
-              <TextInput 
-                style={styles.modalInput} 
-                keyboardType="numeric" 
-                value={editValues.deduction}
-                onChangeText={(v) => setEditValues(e => ({...e, deduction: v}))}
-              />
-
-              <View style={styles.previewContainer}>
-                <Text style={styles.previewLabel}>Net Salary Preview:</Text>
-                <Text style={styles.previewValue}>₹{calculateNetPreview()}</Text>
-              </View>
-
-              <View style={styles.modalActionRow}>
-                <TouchableOpacity style={styles.modalClear} onPress={handleClearForm}>
-                   <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
-                   <Text style={styles.modalClearText}>Clear</Text>
-                </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+               <ScrollView 
+                 showsVerticalScrollIndicator={true} 
+                 style={{ flex: 1 }} 
+                 contentContainerStyle={{ paddingBottom: 40 }}
+                 keyboardShouldPersistTaps="handled"
+               >
+                <Text style={styles.empNameTag}>{selectedForEdit?.name}</Text>
                 
-                <TouchableOpacity style={styles.modalSave} onPress={handleUpdateAdjustment}>
-                  <Text style={styles.modalSaveText}>Submit & Generate</Text>
+                <Text style={styles.modalLabel}>Monthly Base Salary (₹)</Text>
+                <TextInput 
+                  style={styles.modalInput} 
+                  keyboardType="numeric" 
+                  placeholder="e.g. 25000"
+                  placeholderTextColor={COLORS.textMuted}
+                  value={editValues.base_salary}
+                  onChangeText={(v) => setEditValues(e => ({...e, base_salary: v}))}
+                />
+
+                <Text style={styles.modalLabel}>Performance Bonus (₹)</Text>
+                <TextInput 
+                  style={styles.modalInput} 
+                  keyboardType="numeric" 
+                  value={editValues.bonus}
+                  onChangeText={(v) => setEditValues(e => ({...e, bonus: v}))}
+                />
+
+                <Text style={styles.modalLabel}>Deductions / Penalties (₹)</Text>
+                <TextInput 
+                  style={styles.modalInput} 
+                  keyboardType="numeric" 
+                  value={editValues.deduction}
+                  onChangeText={(v) => setEditValues(e => ({...e, deduction: v}))}
+                />
+
+                <View style={styles.previewContainer}>
+                  <Text style={styles.previewLabel}>Net Salary Preview:</Text>
+                  <Text style={styles.previewValue}>₹{calculateNetPreview()}</Text>
+                </View>
+
+                <View style={styles.modalActionRow}>
+                  <TouchableOpacity style={styles.modalClear} onPress={handleClearForm}>
+                    <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
+                    <Text style={styles.modalClearText}>Clear</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.modalSave} onPress={handleUpdateAdjustment}>
+                    <Text style={styles.modalSaveText}>Submit & Generate</Text>
+                  </TouchableOpacity>
+                </View>
+                
+                <TouchableOpacity style={styles.modalCancel} onPress={() => { setShowEditModal(false); setIsSettingBase(false); }}>
+                  <Text style={styles.modalCancelText}>Cancel</Text>
                 </TouchableOpacity>
-              </View>
-              
-              <TouchableOpacity style={styles.modalCancel} onPress={() => { setShowEditModal(false); setIsSettingBase(false); }}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </ScrollView>
+              </ScrollView>
+            </View>
           </View>
         </View>
       </Modal>
@@ -357,7 +364,7 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', marginTop: 100, gap: 10 },
   emptyText: { color: COLORS.textMuted, fontSize: 14 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: COLORS.bgCard, width: '90%', maxHeight: SCREEN_HEIGHT * 0.7, borderRadius: RADIUS.xl, padding: 20, borderWidth: 1, borderColor: COLORS.border },
+  modalContent: { backgroundColor: COLORS.bgCard, width: '90%', maxHeight: SCREEN_HEIGHT * 0.85, borderRadius: RADIUS.xl, padding: 20, borderWidth: 1, borderColor: COLORS.border, display: 'flex' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   modalTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
   empNameTag: { color: COLORS.primary, fontSize: 13, fontWeight: '600', marginBottom: 20, textTransform: 'uppercase' },
