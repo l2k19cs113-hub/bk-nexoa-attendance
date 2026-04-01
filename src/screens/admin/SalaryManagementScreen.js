@@ -17,8 +17,9 @@ export default function SalaryManagementScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [generating, setGenerating] = useState(null);
   const [selectedForEdit, setSelectedForEdit] = useState(null);
-  const [editValues, setEditValues] = useState({ bonus: '0', deduction: '0' });
+  const [editValues, setEditValues] = useState({ bonus: '0', deduction: '0', base_salary: '0' });
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isSettingBase, setIsSettingBase] = useState(false);
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
@@ -50,8 +51,11 @@ export default function SalaryManagementScreen() {
   };
 
   const handleGenerateSalary = async (employee) => {
-    if (!employee.base_salary) {
-      Alert.alert('Incomplete Profile', `Please set a base salary for ${employee.name} in Employee Management.`);
+    if (!employee.base_salary || employee.base_salary === 0) {
+      setSelectedForEdit(employee);
+      setEditValues({ bonus: '0', deduction: '0', base_salary: '0' });
+      setIsSettingBase(true);
+      setShowEditModal(true);
       return;
     }
 
@@ -93,19 +97,27 @@ export default function SalaryManagementScreen() {
     try {
       setLoading(true);
       const employee = selectedForEdit;
+      
+      // If we are setting the base salary for the first time
+      if (isSettingBase) {
+        await usersApi.updateProfile(employee.id, { base_salary: Number(editValues.base_salary) });
+        employee.base_salary = Number(editValues.base_salary);
+      }
+
       const salaryRecord = await salariesApi.generateSalary({
         userId: employee.id,
         month: currentMonth,
         year: currentYear,
-        baseSalary: employee.base_salary,
+        baseSalary: employee.base_salary || Number(editValues.base_salary),
         absentDeduction: Number(editValues.deduction),
         bonus: Number(editValues.bonus)
       });
       setSalaries(prev => ({ ...prev, [employee.id]: salaryRecord }));
       setShowEditModal(false);
-      Alert.alert('Success', 'Salary adjustments saved.');
+      setIsSettingBase(false);
+      alert('Salary details saved successfully.');
     } catch (err) {
-      Alert.alert('Error', err.message);
+      alert('Error: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -116,8 +128,10 @@ export default function SalaryManagementScreen() {
     setSelectedForEdit(employee);
     setEditValues({
       bonus: existing?.bonus?.toString() || '0',
-      deduction: existing?.absent_deduction?.toString() || '0'
+      deduction: existing?.absent_deduction?.toString() || '0',
+      base_salary: employee.base_salary?.toString() || '0'
     });
+    setIsSettingBase(false);
     setShowEditModal(true);
   };
 
@@ -235,30 +249,51 @@ export default function SalaryManagementScreen() {
         {showEditModal && (
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Adjust Salary: {selectedForEdit?.name}</Text>
+              <Text style={styles.modalTitle}>
+                {isSettingBase ? `Set Base Salary: ${selectedForEdit?.name}` : `Adjust Salary: ${selectedForEdit?.name}`}
+              </Text>
               
-              <Text style={styles.modalLabel}>Performance Bonus (₹)</Text>
-              <TextInput 
-                style={styles.modalInput} 
-                keyboardType="numeric" 
-                value={editValues.bonus}
-                onChangeText={(v) => setEditValues(e => ({...e, bonus: v}))}
-              />
+              {isSettingBase && (
+                <>
+                  <Text style={styles.modalLabel}>Monthly Base Salary (₹)</Text>
+                  <TextInput 
+                    style={styles.modalInput} 
+                    keyboardType="numeric" 
+                    placeholder="e.g. 25000"
+                    placeholderTextColor={COLORS.textMuted}
+                    value={editValues.base_salary}
+                    onChangeText={(v) => setEditValues(e => ({...e, base_salary: v}))}
+                    autoFocus
+                  />
+                </>
+              )}
 
-              <Text style={styles.modalLabel}>Deductions / Penalties (₹)</Text>
-              <TextInput 
-                style={styles.modalInput} 
-                keyboardType="numeric" 
-                value={editValues.deduction}
-                onChangeText={(v) => setEditValues(e => ({...e, deduction: v}))}
-              />
+              {!isSettingBase && (
+                <>
+                  <Text style={styles.modalLabel}>Performance Bonus (₹)</Text>
+                  <TextInput 
+                    style={styles.modalInput} 
+                    keyboardType="numeric" 
+                    value={editValues.bonus}
+                    onChangeText={(v) => setEditValues(e => ({...e, bonus: v}))}
+                  />
+
+                  <Text style={styles.modalLabel}>Deductions / Penalties (₹)</Text>
+                  <TextInput 
+                    style={styles.modalInput} 
+                    keyboardType="numeric" 
+                    value={editValues.deduction}
+                    onChangeText={(v) => setEditValues(e => ({...e, deduction: v}))}
+                  />
+                </>
+              )}
 
               <View style={styles.modalActions}>
-                <TouchableOpacity style={styles.modalCancel} onPress={() => setShowEditModal(false)}>
+                <TouchableOpacity style={styles.modalCancel} onPress={() => { setShowEditModal(false); setIsSettingBase(false); }}>
                   <Text style={styles.modalCancelText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.modalSave} onPress={handleUpdateAdjustment}>
-                  <Text style={styles.modalSaveText}>Save Adjustment</Text>
+                  <Text style={styles.modalSaveText}>{isSettingBase ? 'Set & Generate' : 'Save Adjustment'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
