@@ -51,16 +51,22 @@ const useAuthStore = create((set, get) => ({
 
   signIn: async (email, password) => {
     let data;
-    // Hardcoded Admin Bypass
-    if (email.toLowerCase() === 'kaththibala89@gmail.com' && password === 'balakish5') {
-      data = { user: { id: 'admin-id', email: 'kaththibala89@gmail.com' }, session: { access_token: 'fake-token' } };
+    const isAdminBypass = email.toLowerCase() === 'kaththibala89@gmail.com' && password === 'balakish5';
+
+    if (isAdminBypass) {
+      // Use a valid UUID format for the bypass account
+      data = { user: { id: '00000000-0000-0000-0000-000000000000', email: 'kaththibala89@gmail.com' }, session: { access_token: 'bypass-token' } };
     } else {
       data = await authApi.signIn({ email, password });
     }
     
-    let profile = await usersApi.getProfile(data.user.id);
+    let profile = null;
+    try {
+      profile = await usersApi.getProfile(data.user.id);
+    } catch (e) {
+      console.log('Get profile failed during sign in:', e);
+    }
 
-    // If profile is missing (created manually in Auth or bypass), create it now
     if (!profile) {
       try {
         const role = (email.toLowerCase() === 'kaththibala89@gmail.com' || email.toLowerCase() === 'admin@gmail.com') ? 'admin' : 'employee';
@@ -70,12 +76,10 @@ const useAuthStore = create((set, get) => ({
           role: role,
         });
       } catch (profileErr) {
-        // If it's a bypass, fallback to local object if DB creation fails
-        if (email.toLowerCase() === 'kaththibala89@gmail.com') {
-           profile = { id: 'admin-id', name: 'Admin', email: 'kaththibala89@gmail.com', role: 'admin' };
+        if (isAdminBypass) {
+           profile = { id: data.user.id, name: 'Admin', email: 'kaththibala89@gmail.com', role: 'admin' };
         } else {
-          console.error('Sign-in profile creation failed:', profileErr);
-          throw new Error('Signed in to auth, but failed to link your profile to the database. Please contact your admin.');
+          throw new Error('Signed in, but failed to load your database profile.');
         }
       }
     }
