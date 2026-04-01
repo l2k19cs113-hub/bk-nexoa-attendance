@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, StatusBar, Alert, ActivityIndicator, ScrollView, TextInput
+  RefreshControl, StatusBar, Alert, ActivityIndicator, ScrollView, TextInput,
+  Modal, Dimensions
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +10,8 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { COLORS, RADIUS } from '../../constants';
 import { usersApi, attendanceApi, salariesApi } from '../../api';
 import { generatePayslipPDF } from '../../utils/pdfGenerator';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function SalaryManagementScreen() {
   const [employees, setEmployees] = useState([]);
@@ -247,68 +250,66 @@ export default function SalaryManagementScreen() {
       )}
 
       {/* Adjustment Modal */}
-      <View>
-        {showEditModal && (
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>
-                    {isSettingBase ? `Set Base Salary: ${selectedForEdit?.name}` : `Adjust Salary: ${selectedForEdit?.name}`}
-                  </Text>
-                  <TouchableOpacity onPress={() => { setShowEditModal(false); setIsSettingBase(false); }}>
-                    <Ionicons name="close" size={24} color={COLORS.textMuted} />
-                  </TouchableOpacity>
-                </View>
-                
-                {isSettingBase && (
-                  <>
-                    <Text style={styles.modalLabel}>Monthly Base Salary (₹)</Text>
-                    <TextInput 
-                      style={styles.modalInput} 
-                      keyboardType="numeric" 
-                      placeholder="e.g. 25000"
-                      placeholderTextColor={COLORS.textMuted}
-                      value={editValues.base_salary}
-                      onChangeText={(v) => setEditValues(e => ({...e, base_salary: v}))}
-                      autoFocus
-                    />
-                  </>
-                )}
-
-                {!isSettingBase && (
-                  <>
-                    <Text style={styles.modalLabel}>Performance Bonus (₹)</Text>
-                    <TextInput 
-                      style={styles.modalInput} 
-                      keyboardType="numeric" 
-                      value={editValues.bonus}
-                      onChangeText={(v) => setEditValues(e => ({...e, bonus: v}))}
-                    />
-
-                    <Text style={styles.modalLabel}>Deductions / Penalties (₹)</Text>
-                    <TextInput 
-                      style={styles.modalInput} 
-                      keyboardType="numeric" 
-                      value={editValues.deduction}
-                      onChangeText={(v) => setEditValues(e => ({...e, deduction: v}))}
-                    />
-                  </>
-                )}
-
-                <View style={styles.modalActions}>
-                  <TouchableOpacity style={styles.modalCancel} onPress={() => { setShowEditModal(false); setIsSettingBase(false); }}>
-                    <Text style={styles.modalCancelText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.modalSave} onPress={handleUpdateAdjustment}>
-                    <Text style={styles.modalSaveText}>{isSettingBase ? 'Set & Generate' : 'Save Adjustment'}</Text>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
+      <Modal visible={showEditModal} transparent animationType="fade" onRequestClose={() => setShowEditModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle} numberOfLines={1}>
+                {isSettingBase ? `Set Base Salary` : `Adjust Salary`}
+              </Text>
+              <TouchableOpacity onPress={() => { setShowEditModal(false); setIsSettingBase(false); }}>
+                <Ionicons name="close" size={24} color={COLORS.textMuted} />
+              </TouchableOpacity>
             </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+              <Text style={styles.empNameTag}>{selectedForEdit?.name}</Text>
+              
+              {isSettingBase && (
+                <>
+                  <Text style={styles.modalLabel}>Monthly Base Salary (₹)</Text>
+                  <TextInput 
+                    style={styles.modalInput} 
+                    keyboardType="numeric" 
+                    placeholder="e.g. 25000"
+                    placeholderTextColor={COLORS.textMuted}
+                    value={editValues.base_salary}
+                    onChangeText={(v) => setEditValues(e => ({...e, base_salary: v}))}
+                  />
+                </>
+              )}
+
+              {!isSettingBase && (
+                <>
+                  <Text style={styles.modalLabel}>Performance Bonus (₹)</Text>
+                  <TextInput 
+                    style={styles.modalInput} 
+                    keyboardType="numeric" 
+                    value={editValues.bonus}
+                    onChangeText={(v) => setEditValues(e => ({...e, bonus: v}))}
+                  />
+
+                  <Text style={styles.modalLabel}>Deductions / Penalties (₹)</Text>
+                  <TextInput 
+                    style={styles.modalInput} 
+                    keyboardType="numeric" 
+                    value={editValues.deduction}
+                    onChangeText={(v) => setEditValues(e => ({...e, deduction: v}))}
+                  />
+                </>
+              )}
+
+              <TouchableOpacity style={styles.modalSave} onPress={handleUpdateAdjustment}>
+                <Text style={styles.modalSaveText}>{isSettingBase ? 'Set & Generate' : 'Save Adjustment'}</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.modalCancel} onPress={() => { setShowEditModal(false); setIsSettingBase(false); }}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
-        )}
-      </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -339,15 +340,15 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyState: { alignItems: 'center', marginTop: 100, gap: 10 },
   emptyText: { color: COLORS.textMuted, fontSize: 14 },
-  modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-  modalContent: { backgroundColor: COLORS.bgCard, width: '90%', maxHeight: '80%', borderRadius: RADIUS.xl, padding: 20, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '700', flex: 1 },
-  modalLabel: { color: COLORS.textMuted, fontSize: 12, marginBottom: 8 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: COLORS.bgCard, width: '90%', maxHeight: SCREEN_HEIGHT * 0.7, borderRadius: RADIUS.xl, padding: 20, borderWidth: 1, borderColor: COLORS.border },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  empNameTag: { color: COLORS.primary, fontSize: 13, fontWeight: '600', marginBottom: 20, textTransform: 'uppercase' },
+  modalLabel: { color: COLORS.textMuted, fontSize: 12, marginBottom: 8, marginTop: 10 },
   modalInput: { backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, height: 48, paddingHorizontal: 12, color: '#fff', fontSize: 16, marginBottom: 16, borderWidth: 1, borderColor: COLORS.border },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 10 },
-  modalCancel: { flex: 1, height: 48, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.bgInput },
-  modalCancelText: { color: COLORS.textMuted, fontWeight: '600' },
-  modalSave: { flex: 2, height: 48, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.primary },
-  modalSaveText: { color: '#fff', fontWeight: '700' },
+  modalSave: { height: 50, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.primary, marginTop: 25 },
+  modalSaveText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  modalCancel: { height: 44, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
+  modalCancelText: { color: COLORS.textMuted, fontWeight: '600', fontSize: 13 },
 });

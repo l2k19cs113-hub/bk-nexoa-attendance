@@ -185,6 +185,27 @@ CREATE POLICY "Admins can update report status"
   USING (
     EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
   );
+
+-- ─── SALARY POLICIES ──────────────────────────────────────────────────────────
+
+-- Employees view own salary
+CREATE POLICY "Employees view own salary"
+  ON salaries FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Admins view all salaries
+CREATE POLICY "Admins view all salaries"
+  ON salaries FOR SELECT
+  USING (
+    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- Admins manage all salaries
+CREATE POLICY "Admins manage all salaries"
+  ON salaries FOR ALL
+  USING (
+    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+  );
 ```
 
 ---
