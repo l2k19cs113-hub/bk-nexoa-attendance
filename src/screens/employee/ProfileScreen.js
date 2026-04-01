@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   StatusBar, Alert, ActivityIndicator, TextInput, Switch, Platform
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
@@ -21,21 +22,23 @@ export default function ProfileScreen() {
   const [salary, setSalary] = useState(null);
   const [fetchingSalary, setFetchingSalary] = useState(false);
 
-  React.useEffect(() => {
-    const fetchSalary = async () => {
-      try {
-        setFetchingSalary(true);
-        const now = new Date();
-        const data = await salariesApi.getMonthlySalary(profile.id, now.getMonth() + 1, now.getFullYear());
-        setSalary(data);
-      } catch (err) {
-        console.log('No salary found/error:', err);
-      } finally {
-        setFetchingSalary(false);
-      }
-    };
-    if (profile?.id) fetchSalary();
-  }, [profile]);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchSalary = async () => {
+        try {
+          setFetchingSalary(true);
+          const now = new Date();
+          const data = await salariesApi.getMonthlySalary(profile.id, now.getMonth() + 1, now.getFullYear());
+          setSalary(data);
+        } catch (err) {
+          console.log('No salary found/error:', err);
+        } finally {
+          setFetchingSalary(false);
+        }
+      };
+      if (profile?.id) fetchSalary();
+    }, [profile?.id])
+  );
 
   const handleDownloadPayslip = async () => {
     if (!salary) {
@@ -144,42 +147,77 @@ export default function ProfileScreen() {
 
         {/* Salary Section */}
         {profile?.role === 'employee' && (
-          <View style={styles.bankSection}>
+          <View style={styles.salaryContainer}>
             <View style={styles.sectionHeader}>
               <Ionicons name="cash-outline" size={18} color={COLORS.primary} />
-              <Text style={styles.sectionTitle}>Employee Salary & Payslip</Text>
+              <Text style={styles.sectionTitle}>Payroll & Compensation</Text>
             </View>
-            <View style={styles.bankCard}>
-              <View style={styles.bankRow}>
-                <Text style={styles.bankLabel}>Base Monthly Salary</Text>
-                <Text style={styles.bankValue}>₹{profile?.base_salary || '0'}</Text>
+            
+            {fetchingSalary ? (
+              <View style={styles.loadingBox}>
+                <ActivityIndicator color={COLORS.primary} />
+                <Text style={styles.loadingBoxText}>Syncing payroll data...</Text>
               </View>
-              {salary && (
-                <>
-                  <View style={styles.bankDivider} />
-                  <View style={styles.bankRow}>
-                    <Text style={styles.bankLabel}>Present Month Payout</Text>
-                    <Text style={[styles.bankValue, { color: COLORS.success }]}>₹{salary.net_salary}</Text>
+            ) : (
+              <View style={styles.premiumSalaryCard}>
+                <View style={styles.salaryHeader}>
+                  <View>
+                    <Text style={styles.salaryItemLabel}>Monthly Base Salary</Text>
+                    <Text style={styles.salaryItemValue}>₹{profile?.base_salary || '0'}</Text>
                   </View>
-                </>
-              )}
-              <TouchableOpacity 
-                style={[styles.downloadBtn, !salary && styles.disabledBtn]} 
-                onPress={handleDownloadPayslip}
-                disabled={loading || !salary}
-              >
-                {loading ? (
-                  <ActivityIndicator color={COLORS.primary} size="small" />
-                ) : (
+                  <View style={styles.payoutBadge}>
+                    <Text style={styles.payoutBadgeText}>{format(new Date(), 'MMMM')}</Text>
+                  </View>
+                </View>
+
+                {salary ? (
                   <>
-                    <Ionicons name="document-outline" size={16} color={salary ? COLORS.primary : COLORS.textMuted} />
-                    <Text style={[styles.downloadBtnText, !salary && { color: COLORS.textMuted }]}>
-                      {salary ? "Download Payslip PDF" : "Payslip not available"}
-                    </Text>
+                    <View style={styles.payrollBreakdown}>
+                      <View style={styles.payrollRow}>
+                        <Text style={styles.payrollLabel}>Performance Bonus</Text>
+                        <Text style={[styles.payrollValue, { color: COLORS.success }]}>+ ₹{salary.bonus || 0}</Text>
+                      </View>
+                      <View style={styles.payrollRow}>
+                        <Text style={styles.payrollLabel}>Absent Deductions</Text>
+                        <Text style={[styles.payrollValue, { color: COLORS.danger }]}>- ₹{salary.absent_deduction || 0}</Text>
+                      </View>
+                      <View style={styles.payrollDivider} />
+                      <View style={styles.payrollTotal}>
+                        <Text style={styles.payrollTotalLabel}>Net Take-Home</Text>
+                        <Text style={styles.payrollTotalValue}>₹{salary.net_salary}</Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity 
+                      style={styles.premiumDownloadBtn} 
+                      onPress={handleDownloadPayslip}
+                      disabled={loading}
+                    >
+                      <LinearGradient 
+                        colors={COLORS.gradientPrimary} 
+                        style={styles.innerGradientBtn}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        {loading ? (
+                          <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                          <>
+                            <Ionicons name="cloud-download-sharp" size={18} color="#fff" />
+                            <Text style={styles.premiumDownloadText}>Download Official Payslip</Text>
+                          </>
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
                   </>
+                ) : (
+                  <View style={styles.noSalaryBox}>
+                    <Ionicons name="time-outline" size={24} color={COLORS.textMuted} />
+                    <Text style={styles.noSalaryBoxText}>Salary for {format(new Date(), 'MMMM')} is not generated yet.</Text>
+                  </View>
                 )}
-              </TouchableOpacity>
-            </View>
+              </View>
+            )}
           </View>
         )}
 
@@ -280,9 +318,31 @@ const styles = StyleSheet.create({
   cancelBtnText: { color: COLORS.textMuted, fontWeight: '600' },
   saveBtn: { height: 42, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
   saveBtnText: { color: '#fff', fontWeight: '700' },
-  bankSection: { marginBottom: 20 },
+  salaryContainer: { marginBottom: 20 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   sectionTitle: { fontSize: 13, fontWeight: '800', color: COLORS.primary, textTransform: 'uppercase', letterSpacing: 1 },
+  premiumSalaryCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, padding: 20, borderWidth: 1, borderColor: COLORS.border, position: 'relative', overflow: 'hidden' },
+  salaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  salaryItemLabel: { fontSize: 11, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
+  salaryItemValue: { fontSize: 18, fontWeight: '800', color: '#fff', marginTop: 4 },
+  payoutBadge: { backgroundColor: `${COLORS.primary}20`, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  payoutBadgeText: { fontSize: 13, color: COLORS.primary, fontWeight: '800' },
+  payrollBreakdown: { backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: RADIUS.lg, padding: 16, marginBottom: 20 },
+  payrollRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  payrollLabel: { fontSize: 13, color: COLORS.textMuted },
+  payrollValue: { fontSize: 13, fontWeight: '700' },
+  payrollDivider: { height: 1, backgroundColor: COLORS.border, marginVertical: 10 },
+  payrollTotal: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
+  payrollTotalLabel: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  payrollTotalValue: { fontSize: 20, fontWeight: '800', color: COLORS.success },
+  premiumDownloadBtn: { borderRadius: RADIUS.lg, overflow: 'hidden' },
+  innerGradientBtn: { height: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  premiumDownloadText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  noSalaryBox: { alignItems: 'center', paddingVertical: 20, gap: 10 },
+  noSalaryBoxText: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center' },
+  loadingBox: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, padding: 30, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: COLORS.border },
+  loadingBoxText: { fontSize: 13, color: COLORS.textMuted },
+  bankSection: { marginBottom: 20 },
   bankCard: { backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, padding: 16, borderWidth: 1, borderColor: COLORS.border },
   bankRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
   bankLabel: { fontSize: 12, color: COLORS.textMuted },
@@ -298,7 +358,4 @@ const styles = StyleSheet.create({
   signOutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: `${COLORS.danger}15`, borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: `${COLORS.danger}30` },
   signOutText: { fontSize: 15, fontWeight: '700', color: COLORS.danger },
   footer: { textAlign: 'center', fontSize: 11, color: COLORS.textMuted, marginBottom: 8 },
-  downloadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
-  downloadBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
-  disabledBtn: { opacity: 0.5 },
 });

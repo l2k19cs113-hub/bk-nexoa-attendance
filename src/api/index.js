@@ -129,32 +129,60 @@ export const salariesApi = {
       .eq('user_id', userId)
       .eq('month', month)
       .eq('year', year)
-      .maybeSingle();
+      .order('created_at', { ascending: false })
+      .limit(1);
     if (error) throw error;
-    return data;
+    return data && data.length > 0 ? data[0] : null;
   },
 
   generateSalary: async ({ userId, month, year, baseSalary, absentDeduction = 0, bonus = 0 }) => {
     const netSalary = (Number(baseSalary) - Number(absentDeduction)) + Number(bonus);
     
-    // Upsert salary record
-    const { data, error } = await supabase
+    // Find existing
+    const { data: existing } = await supabase
       .from('salaries')
-      .upsert({
-        user_id: userId,
-        month,
-        year,
-        base_salary: baseSalary,
-        absent_deduction: absentDeduction,
-        bonus,
-        net_salary: netSalary,
-        status: 'pending',
-      }, { onConflict: 'user_id,month,year' })
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+      .select('id')
+      .eq('user_id', userId)
+      .eq('month', month)
+      .eq('year', year)
+      .order('created_at', { ascending: false });
+      
+    if (existing && existing.length > 0) {
+      // Update
+      const targetId = existing[0].id;
+      const { data, error } = await supabase
+        .from('salaries')
+        .update({
+          base_salary: baseSalary,
+          absent_deduction: absentDeduction,
+          bonus,
+          net_salary: netSalary,
+        })
+        .eq('id', targetId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } else {
+      // Insert
+      const { data, error } = await supabase
+        .from('salaries')
+        .insert({
+          user_id: userId,
+          month,
+          year,
+          base_salary: baseSalary,
+          absent_deduction: absentDeduction,
+          bonus,
+          net_salary: netSalary,
+          status: 'pending',
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    }
   },
 
   updateSalaryStatus: async (salaryId, status) => {
@@ -173,7 +201,8 @@ export const salariesApi = {
       .from('salaries')
       .select('*, users(name, email, bank_name, account_no)')
       .eq('month', month)
-      .eq('year', year);
+      .eq('year', year)
+      .order('created_at', { ascending: true });
     if (error) throw error;
     return data;
   }

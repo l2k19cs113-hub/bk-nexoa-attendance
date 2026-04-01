@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  RefreshControl, StatusBar, Dimensions,
+  RefreshControl, StatusBar, Dimensions, ActivityIndicator, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { format } from 'date-fns';
-import { useNavigation } from '@react-navigation/native';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { COLORS, RADIUS } from '../../constants';
 import useAuthStore from '../../store/authStore';
 import useAttendanceStore from '../../store/attendanceStore';
 import useReportsStore from '../../store/reportsStore';
+import { salariesApi, attendanceApi } from '../../api';
+import { generatePayslipPDF } from '../../utils/pdfGenerator';
 
 const { width } = Dimensions.get('window');
 
@@ -20,19 +22,59 @@ export default function EmployeeDashboardScreen() {
   const { fetchTodayAttendance, todayRecord, isCheckedIn, isCheckedOut } = useAttendanceStore();
   const { fetchMyReports, myReports } = useReportsStore();
   const [refreshing, setRefreshing] = useState(false);
+  const [salary, setSalary] = useState(null);
+  const [loadingSalary, setLoadingSalary] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const fetchSalary = async () => {
+    try {
+      setLoadingSalary(true);
+      const now = new Date();
+      const data = await salariesApi.getMonthlySalary(profile.id, now.getMonth() + 1, now.getFullYear());
+      setSalary(data);
+    } catch (err) {
+      console.log('No salary found/error:', err);
+    } finally {
+      setLoadingSalary(false);
+    }
+  };
 
   const load = async () => {
     if (profile?.id) {
       await Promise.all([
         fetchTodayAttendance(profile.id),
         fetchMyReports(profile.id),
+        fetchSalary(),
       ]);
     }
   };
 
-  useEffect(() => { load(); }, [profile?.id]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [profile?.id])
+  );
 
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+  const onRefresh = async () => { 
+    setRefreshing(true); 
+    await load(); 
+    setRefreshing(false); 
+  };
+
+  const handleDownloadPayslip = async () => {
+    if (!salary) return;
+    try {
+      setDownloading(true);
+      const start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+      const end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+      const attendance = await attendanceApi.getUserAttendance(profile.id, start, end);
+      await generatePayslipPDF(profile, salary, attendance);
+    } catch (err) {
+      Alert.alert('Error', 'Failed to generate payslip.');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const now = new Date();
   const greeting = now.getHours() < 12 ? 'Morning' : now.getHours() < 17 ? 'Afternoon' : 'Evening';
@@ -96,6 +138,36 @@ export default function EmployeeDashboardScreen() {
             </View>
           </View>
         </LinearGradient>
+
+        {/* Salary Payout Card */}
+        {salary && (
+          <View style={styles.salaryCard}>
+            <View style={styles.salaryCardHeader}>
+              <View>
+                <Text style={styles.salaryLabel}>Monthly Payout</Text>
+                <Text style={styles.salaryValue}>₹{salary.net_salary}</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.salaryActionBtn} 
+                onPress={handleDownloadPayslip}
+                disabled={downloading}
+              >
+                {downloading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="cloud-download-outline" size={20} color="#fff" />
+                    <Text style={styles.salaryActionText}>Slip</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+            <View style={styles.salaryFooter}>
+              <Ionicons name="checkmark-circle-sharp" size={14} color={COLORS.success} />
+              <Text style={styles.salaryFooterText}>Salary generated for {format(now, 'MMMM')}</Text>
+            </View>
+          </View>
+        )}
 
         {/* Quick Stats */}
         <Text style={styles.sectionTitle}>My Statistics</Text>
@@ -189,6 +261,21 @@ const styles = StyleSheet.create({
     width: 60, height: 60, borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center',
   },
+  salaryCard: {
+    backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl, padding: 18, marginTop: 12,
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  salaryCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  salaryLabel: { fontSize: 12, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
+  salaryValue: { fontSize: 26, fontWeight: '800', color: COLORS.success, marginTop: 4 },
+  salaryActionBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: COLORS.primary, paddingHorizontal: 15, paddingVertical: 10,
+    borderRadius: RADIUS.md,
+  },
+  salaryActionText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  salaryFooter: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 15, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 10 },
+  salaryFooterText: { fontSize: 11, color: COLORS.textMuted },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 24, marginBottom: 12 },
   statsGrid: { flexDirection: 'row', gap: 10 },
   statCard: {
