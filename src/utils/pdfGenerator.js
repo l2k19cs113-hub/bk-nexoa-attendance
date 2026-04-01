@@ -123,7 +123,7 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
             <div class="logo-area">
               <img src="${LOGO_BASE64}" class="logo" />
               <div class="logo-text-block">
-                <p class="company-name">${APP_NAME}</p>
+                <p class="company-name">BK Nexora Tech</p>
                 <p class="company-tag">Innovating the Future</p>
               </div>
             </div>
@@ -240,9 +240,9 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
         <div class="signatures-area">
           <div class="sig-box">
             <div class="sig-line">
-               <span class="cursive">Signature</span>
+               <span class="cursive">Saranya</span>
             </div>
-            Company Seal & Signature
+            Saranya, CEO
           </div>
           <div class="sig-box">
             <div class="sig-line"></div>
@@ -251,7 +251,7 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
         </div>
 
         <div class="bottom-bar">
-          www.bknexora.com | contact@bknexora.com | BK Nexora Tech, Tech Park, Silicon Valley
+          www.bknoexoratech.in | support@bknexoratech.in | BK Nexora Tech, Trichy, Tamil Nadu
           <div class="bottom-line"></div>
         </div>
       </body>
