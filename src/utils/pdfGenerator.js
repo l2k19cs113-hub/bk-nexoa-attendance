@@ -2,6 +2,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { format } from 'date-fns';
 import { APP_NAME } from '../constants';
+import { LOGO_BASE64 } from '../constants/logo';
 
 export const generatePayslipPDF = async (employee, salary, attendance) => {
   const monthName = format(new Date(salary.year, salary.month - 1), 'MMMM yyyy');
@@ -11,7 +12,7 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
       <td>${format(new Date(a.date), 'dd/MM/yyyy')}</td>
       <td>${a.check_in_time ? format(new Date(a.check_in_time), 'hh:mm a') : '--'}</td>
       <td>${a.check_out_time ? format(new Date(a.check_out_time), 'hh:mm a') : '--'}</td>
-      <td>Present</td>
+      <td><span class="badge ${a.status === 'absent' ? 'absent' : 'present'}">Present</span></td>
     </tr>
   `).join('');
 
@@ -20,69 +21,116 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
         <style>
-          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; }
-          .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #6C63FF; padding-bottom: 20px; }
-          .company-name { font-size: 28px; font-weight: bold; color: #6C63FF; margin-bottom: 5px; }
-          .document-title { font-size: 18px; color: #666; text-transform: uppercase; letter-spacing: 2px; }
+          body { font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #1F2937; background: #FFF; }
           
-          .info-section { display: flex; justify-content: space-between; margin-bottom: 30px; }
-          .info-box { flex: 1; }
-          .info-box h3 { font-size: 14px; color: #888; margin-bottom: 5px; text-transform: uppercase; }
-          .info-box p { font-size: 16px; font-weight: 600; margin: 0; }
+          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #E5E7EB; padding-bottom: 25px; margin-bottom: 30px; }
+          .logo-container { width: 120px; height: 120px; }
+          .logo { width: 100%; height: 100%; object-fit: contain; }
+          
+          .company-info { text-align: right; }
+          .company-name { font-size: 24px; font-weight: 800; color: #111827; }
+          .payslip-title { font-size: 14px; text-transform: uppercase; color: #6B7280; letter-spacing: 1px; margin-top: 5px; }
+          .payslip-month { font-size: 18px; font-weight: 700; color: #6366F1; margin-top: 2px; }
 
-          .salary-table, .attendance-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-          .salary-table th, .attendance-table th { background-color: #F3F4F6; text-align: left; padding: 12px; font-size: 12px; color: #666; border-bottom: 1px solid #EEE; }
-          .salary-table td, .attendance-table td { padding: 12px; border-bottom: 1px solid #EEE; font-size: 14px; }
+          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+          .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #9CA3AF; margin-bottom: 12px; border-bottom: 1px solid #F3F4F6; padding-bottom: 5px; }
           
-          .total-row { background-color: #6C63FF; color: white; font-weight: bold; }
-          .total-row td { border: none; font-size: 18px; }
+          .info-label { font-size: 11px; color: #6B7280; margin-bottom: 2px; }
+          .info-value { font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 10px; }
+
+          .tables-container { display: flex; gap: 30px; margin-bottom: 40px; }
+          .table-wrapper { flex: 1; }
           
-          .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; }
-          .signature-area { margin-top: 60px; display: flex; justify-content: space-between; }
-          .signature-box { border-top: 1px solid #333; width: 200px; text-align: center; padding-top: 10px; font-size: 14px; }
+          table { width: 100%; border-collapse: collapse; }
+          th { background: #F9FAFB; text-align: left; padding: 12px; font-size: 11px; font-weight: 700; color: #4B5563; border-bottom: 1px solid #E5E7EB; text-transform: uppercase; }
+          td { padding: 12px; font-size: 13px; border-bottom: 1px solid #F3F4F6; color: #374151; }
+          
+          .amount { text-align: right; font-weight: 600; }
+          .deduction { color: #EF4444; }
+          .addition { color: #10B981; }
+
+          .net-pay-card { background: #111827; color: white; padding: 25px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+          .net-pay-label { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+          .net-pay-value { font-size: 32px; font-weight: 800; }
+
+          .attendance-section { margin-top: 20px; }
+          .badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+          .present { background: #ECFDF5; color: #059669; }
+          
+          .signatures { display: flex; justify-content: space-between; margin-top: 80px; }
+          .sig-box { width: 200px; text-align: center; border-top: 1px solid #D1D5DB; padding-top: 10px; font-size: 12px; color: #6B7280; }
+
+          .footer { text-align: center; margin-top: 50px; font-size: 11px; color: #9CA3AF; border-top: 1px solid #F3F4F6; padding-top: 20px; }
         </style>
       </head>
       <body>
         <div class="header">
-          <div class="company-name">${APP_NAME}</div>
-          <div class="document-title">Salary Slips - ${monthName}</div>
-        </div>
-
-        <div class="info-section">
-          <div class="info-box">
-            <h3>Employee Details</h3>
-            <p>${employee.name}</p>
-            <p>${employee.email}</p>
+          <div class="logo-container">
+            <img src="${LOGO_BASE64}" class="logo" />
           </div>
-          <div class="info-box" style="text-align: right;">
-            <h3>Bank Details</h3>
-            <p>${employee.bank_name || 'N/A'}</p>
-            <p>A/C: ${employee.account_no || 'N/A'}</p>
+          <div class="company-info">
+            <div class="company-name">${APP_NAME}</div>
+            <div class="payslip-title">Official Payslip</div>
+            <div class="payslip-month">${monthName}</div>
           </div>
         </div>
 
-        <h3>Salary Breakdown</h3>
-        <table class="salary-table">
-          <tr><th>Description</th><th style="text-align: right;">Amount</th></tr>
-          <tr><td>Monthly Base Salary</td><td style="text-align: right;">₹${salary.base_salary}</td></tr>
-          <tr><td>Absent Deductions</td><td style="text-align: right; color: #EF4444;">- ₹${salary.absent_deduction}</td></tr>
-          <tr><td>Performance Bonus</td><td style="text-align: right; color: #10B981;">+ ₹${salary.bonus}</td></tr>
-          <tr class="total-row"><td>Net Payable</td><td style="text-align: right;">₹${salary.net_salary}</td></tr>
-        </table>
+        <div class="grid">
+          <div>
+            <div class="section-title">Employee Details</div>
+            <div class="info-label">Name</div>
+            <div class="info-value">${employee.name}</div>
+            <div class="info-label">Email</div>
+            <div class="info-value">${employee.email}</div>
+          </div>
+          <div>
+            <div class="section-title">Payment Method</div>
+            <div class="info-label">Bank Name</div>
+            <div class="info-value">${employee.bank_name || 'N/A'}</div>
+            <div class="info-label">Account Number</div>
+            <div class="info-value">${employee.account_no || 'N/A'}</div>
+          </div>
+        </div>
 
-        <h3>Attendance Summary</h3>
-        <table class="attendance-table">
-          <thead><tr><th>Date</th><th>In Time</th><th>Out Time</th><th>Status</th></tr></thead>
-          <tbody>${attendanceRows}</tbody>
-        </table>
+        <div class="tables-container">
+          <div class="table-wrapper">
+            <div class="section-title">Earnings</div>
+            <table>
+              <tr><th>Description</th><th class="amount">Amount</th></tr>
+              <tr><td>Base Salary</td><td class="amount">₹${salary.base_salary}</td></tr>
+              <tr><td>Bonus</td><td class="amount addition">+ ₹${salary.bonus}</td></tr>
+            </table>
+          </div>
+          <div class="table-wrapper">
+            <div class="section-title">Deductions</div>
+            <table>
+              <tr><th>Description</th><th class="amount">Amount</th></tr>
+              <tr><td>Absenteeism</td><td class="amount deduction">- ₹${salary.absent_deduction}</td></tr>
+              <tr><td>Misc. Deductions</td><td class="amount deduction">- ₹0</td></tr>
+            </table>
+          </div>
+        </div>
 
-        <div class="signature-area">
-          <div class="signature-box">Employee Signature</div>
-          <div class="signature-box">Authorized Signatory</div>
+        <div class="net-pay-card">
+          <div class="net-pay-label">Net Monthly Salary</div>
+          <div class="net-pay-value">₹${salary.net_salary}</div>
+        </div>
+
+        <div class="attendance-section">
+          <div class="section-title">Attendance Log (Present Days)</div>
+          <table>
+            <thead><tr><th>Date</th><th>Clock In</th><th>Clock Out</th><th>Status</th></tr></thead>
+            <tbody>${attendanceRows}</tbody>
+          </table>
+        </div>
+
+        <div class="signatures">
+          <div class="sig-box">Employee's Signature</div>
+          <div class="sig-box">Authorized Signatory</div>
         </div>
 
         <div class="footer">
-          This is a computer generated document and does not require a physical signature.
+          This is a computer-generated document from ${APP_NAME}. No physical signature is required.
         </div>
       </body>
     </html>
