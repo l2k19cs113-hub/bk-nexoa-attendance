@@ -54,41 +54,36 @@ export default function SalaryManagementScreen() {
   };
 
   const handleGenerateSalary = async (employee) => {
-    if (!employee.base_salary || employee.base_salary === 0) {
-      setSelectedForEdit(employee);
-      setEditValues({ bonus: '0', deduction: '0', base_salary: '0' });
-      setIsSettingBase(true);
-      setShowEditModal(true);
-      return;
-    }
-
     try {
       setGenerating(employee.id);
       
       // Calculate attendance for the month
       const startDate = format(startOfMonth(new Date()), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(new Date()), 'yyyy-MM-dd');
-      const attendance = await attendanceApi.getUserAttendance(employee.id, startDate, endDate);
+      let attendance = [];
+      try {
+        attendance = await attendanceApi.getUserAttendance(employee.id, startDate, endDate);
+      } catch (e) {
+        console.log("Could not fetch attendance for calculation", e);
+      }
       
       const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
       const presentDays = attendance.length;
       const absentDays = daysInMonth - presentDays;
       
       // Basic calculation: deduction for absences
-      const dailyRate = employee.base_salary / daysInMonth;
+      const baseSalary = employee.base_salary || 0;
+      const dailyRate = baseSalary / daysInMonth;
       const deduction = Math.round(absentDays * dailyRate);
       
-      const salaryRecord = await salariesApi.generateSalary({
-        userId: employee.id,
-        month: currentMonth,
-        year: currentYear,
-        baseSalary: employee.base_salary,
-        absentDeduction: deduction,
-        bonus: 0
+      setSelectedForEdit(employee);
+      setEditValues({
+        bonus: '0',
+        deduction: deduction.toString(),
+        base_salary: baseSalary.toString()
       });
-
-      setSalaries(prev => ({ ...prev, [employee.id]: salaryRecord }));
-      Alert.alert('Success', `Salary generated for ${employee.name}`);
+      setIsSettingBase(true); // Always show base salary when generating
+      setShowEditModal(true);
     } catch (err) {
       Alert.alert('Error', err.message);
     } finally {
@@ -100,12 +95,13 @@ export default function SalaryManagementScreen() {
     try {
       setLoading(true);
       const employee = selectedForEdit;
-      
-      // If we are setting the base salary for the first time
-      if (isSettingBase) {
-        const baseVal = Number(editValues.base_salary);
+      const baseVal = Number(editValues.base_salary || 0);
+      const deductionVal = Number(editValues.deduction || 0);
+      const bonusVal = Number(editValues.bonus || 0);
+
+      // If we are setting/updating the base salary
+      if (baseVal !== employee.base_salary) {
         await usersApi.updateProfile(employee.id, { base_salary: baseVal });
-        // Update the local employees state to reflect the new base salary
         setEmployees(prev => prev.map(e => e.id === employee.id ? { ...e, base_salary: baseVal } : e));
       }
 
@@ -113,19 +109,35 @@ export default function SalaryManagementScreen() {
         userId: employee.id,
         month: currentMonth,
         year: currentYear,
-        baseSalary: Number(isSettingBase ? editValues.base_salary : employee.base_salary),
-        absentDeduction: Number(editValues.deduction),
-        bonus: Number(editValues.bonus)
+        baseSalary: baseVal,
+        absentDeduction: deductionVal,
+        bonus: bonusVal
       });
+
       setSalaries(prev => ({ ...prev, [employee.id]: salaryRecord }));
       setShowEditModal(false);
       setIsSettingBase(false);
-      alert('Salary details saved successfully.');
+      Alert.alert('Success', 'Salary processed successfully.');
     } catch (err) {
-      alert('Error: ' + err.message);
+      Alert.alert('Error', err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateNetPreview = () => {
+    const base = Number(editValues.base_salary || 0);
+    const bonus = Number(editValues.bonus || 0);
+    const deduction = Number(editValues.deduction || 0);
+    return base + bonus - deduction;
+  };
+
+  const handleClearForm = () => {
+    setEditValues({
+      bonus: '0',
+      deduction: '0',
+      base_salary: selectedForEdit?.base_salary?.toString() || '0'
+    });
   };
 
   const openAdjustModal = (employee) => {
@@ -136,7 +148,7 @@ export default function SalaryManagementScreen() {
       deduction: existing?.absent_deduction?.toString() || '0',
       base_salary: employee.base_salary?.toString() || '0'
     });
-    setIsSettingBase(false);
+    setIsSettingBase(true); // Allow editing base salary even in adjustment
     setShowEditModal(true);
   };
 
@@ -265,43 +277,47 @@ export default function SalaryManagementScreen() {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
               <Text style={styles.empNameTag}>{selectedForEdit?.name}</Text>
               
-              {isSettingBase && (
-                <>
-                  <Text style={styles.modalLabel}>Monthly Base Salary (₹)</Text>
-                  <TextInput 
-                    style={styles.modalInput} 
-                    keyboardType="numeric" 
-                    placeholder="e.g. 25000"
-                    placeholderTextColor={COLORS.textMuted}
-                    value={editValues.base_salary}
-                    onChangeText={(v) => setEditValues(e => ({...e, base_salary: v}))}
-                  />
-                </>
-              )}
+              <Text style={styles.modalLabel}>Monthly Base Salary (₹)</Text>
+              <TextInput 
+                style={styles.modalInput} 
+                keyboardType="numeric" 
+                placeholder="e.g. 25000"
+                placeholderTextColor={COLORS.textMuted}
+                value={editValues.base_salary}
+                onChangeText={(v) => setEditValues(e => ({...e, base_salary: v}))}
+              />
 
-              {!isSettingBase && (
-                <>
-                  <Text style={styles.modalLabel}>Performance Bonus (₹)</Text>
-                  <TextInput 
-                    style={styles.modalInput} 
-                    keyboardType="numeric" 
-                    value={editValues.bonus}
-                    onChangeText={(v) => setEditValues(e => ({...e, bonus: v}))}
-                  />
+              <Text style={styles.modalLabel}>Performance Bonus (₹)</Text>
+              <TextInput 
+                style={styles.modalInput} 
+                keyboardType="numeric" 
+                value={editValues.bonus}
+                onChangeText={(v) => setEditValues(e => ({...e, bonus: v}))}
+              />
 
-                  <Text style={styles.modalLabel}>Deductions / Penalties (₹)</Text>
-                  <TextInput 
-                    style={styles.modalInput} 
-                    keyboardType="numeric" 
-                    value={editValues.deduction}
-                    onChangeText={(v) => setEditValues(e => ({...e, deduction: v}))}
-                  />
-                </>
-              )}
+              <Text style={styles.modalLabel}>Deductions / Penalties (₹)</Text>
+              <TextInput 
+                style={styles.modalInput} 
+                keyboardType="numeric" 
+                value={editValues.deduction}
+                onChangeText={(v) => setEditValues(e => ({...e, deduction: v}))}
+              />
 
-              <TouchableOpacity style={styles.modalSave} onPress={handleUpdateAdjustment}>
-                <Text style={styles.modalSaveText}>{isSettingBase ? 'Set & Generate' : 'Save Adjustment'}</Text>
-              </TouchableOpacity>
+              <View style={styles.previewContainer}>
+                <Text style={styles.previewLabel}>Net Salary Preview:</Text>
+                <Text style={styles.previewValue}>₹{calculateNetPreview()}</Text>
+              </View>
+
+              <View style={styles.modalActionRow}>
+                <TouchableOpacity style={styles.modalClear} onPress={handleClearForm}>
+                   <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
+                   <Text style={styles.modalClearText}>Clear</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.modalSave} onPress={handleUpdateAdjustment}>
+                  <Text style={styles.modalSaveText}>Submit & Generate</Text>
+                </TouchableOpacity>
+              </View>
               
               <TouchableOpacity style={styles.modalCancel} onPress={() => { setShowEditModal(false); setIsSettingBase(false); }}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
@@ -347,8 +363,14 @@ const styles = StyleSheet.create({
   empNameTag: { color: COLORS.primary, fontSize: 13, fontWeight: '600', marginBottom: 20, textTransform: 'uppercase' },
   modalLabel: { color: COLORS.textMuted, fontSize: 12, marginBottom: 8, marginTop: 10 },
   modalInput: { backgroundColor: COLORS.bgInput, borderRadius: RADIUS.md, height: 48, paddingHorizontal: 12, color: '#fff', fontSize: 16, marginBottom: 16, borderWidth: 1, borderColor: COLORS.border },
-  modalSave: { height: 50, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.primary, marginTop: 25 },
+  modalSave: { flex: 1, height: 50, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.primary },
   modalSaveText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  modalActionRow: { flexDirection: 'row', gap: 12, marginTop: 25, alignItems: 'center' },
+  modalClear: { height: 50, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.danger, flexDirection: 'row', gap: 6 },
+  modalClearText: { color: COLORS.danger, fontWeight: '700', fontSize: 14 },
+  previewContainer: { backgroundColor: `${COLORS.primary}10`, padding: 15, borderRadius: RADIUS.md, marginTop: 10, borderLeftWidth: 4, borderLeftColor: COLORS.primary, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  previewLabel: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  previewValue: { color: COLORS.primary, fontSize: 18, fontWeight: '800' },
   modalCancel: { height: 44, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
   modalCancelText: { color: COLORS.textMuted, fontWeight: '600', fontSize: 13 },
 });
