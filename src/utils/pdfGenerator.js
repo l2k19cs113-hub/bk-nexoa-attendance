@@ -7,13 +7,13 @@ import { LOGO_BASE64 } from '../constants/logo';
 
 const numberToWords = (amount) => {
   const words = [];
-  const units = ['','ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN','EIGHT','NINE','TEN','ELEVEN','TWELVE','THIRTEEN','FOURTEEN','FIFTEEN','SIXTEEN','SEVENTEEN','EIGHTEEN','NINETEEN'];
-  const tens = ['','','TWENTY','THIRTY','FORTY','FIFTY','SIXTY','SEVENTY','EIGHTY','NINETY'];
-  
+  const units = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];
+  const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
+
   if (amount === 0) return 'ZERO ONLY';
-  
+
   let num = Math.floor(amount);
-  
+
   if (Math.floor(num / 100000) > 0) {
     words.push(numberToWords(Math.floor(num / 100000)).replace(' ONLY', '') + ' LAKH');
     num %= 100000;
@@ -43,15 +43,16 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
   const payMonth = format(new Date(salary.year, salary.month - 1), 'MMMM yyyy').toUpperCase();
   const dateOfIssuance = format(new Date(), 'dd MMM yyyy').toUpperCase();
   const joiningDate = employee.created_at ? format(new Date(employee.created_at), 'dd-MMM-yyyy').toUpperCase() : '--';
-  
+
   const baseSal = Number(salary.base_salary || 0);
   const bonus = Number(salary.bonus || 0);
   const deductionsVal = Number(salary.absent_deduction || 0);
   const grossEarnings = baseSal + bonus;
   const netPay = grossEarnings - deductionsVal;
-  
+
   const netPayWords = numberToWords(netPay);
-  const empIdStr = employee.id ? `BKNT${employee.id.replace(/[^0-9]/g, '').substring(0, 4)}` : 'N/A';
+  const empIdStr = employee.phone || (employee.id ? `BKNT${employee.id.replace(/[^0-9]/g, '').substring(0, 4)}` : 'N/A');
+  const designationStr = employee.department ? employee.department.toUpperCase() : (employee.role || 'Employee').toUpperCase();
 
   const html = `
     <html>
@@ -148,7 +149,7 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
             </td>
             <td>
               <span class="info-label">Designation</span>
-              <span class="info-value">${(employee.role || 'Employee').toUpperCase()}</span>
+              <span class="info-value">${designationStr}</span>
             </td>
           </tr>
           <tr>
@@ -251,7 +252,7 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
         </div>
 
         <div class="bottom-bar">
-          bknoexoratech.in | support@bknexoratech.in |  BK Nexora Tech,  trichy,tamil nadu
+          bknexoratech.in | support@bknexoratech.in |  BK Nexora Tech,  trichy,tamil nadu
           <div class="bottom-line"></div>
         </div>
       </body>

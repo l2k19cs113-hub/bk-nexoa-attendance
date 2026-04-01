@@ -20,7 +20,7 @@ export default function SalaryManagementScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [generating, setGenerating] = useState(null);
   const [selectedForEdit, setSelectedForEdit] = useState(null);
-  const [editValues, setEditValues] = useState({ bonus: '0', deduction: '0', base_salary: '0' });
+  const [editValues, setEditValues] = useState({ name: '', employee_id: '', designation: '', bonus: '0', deduction: '0', base_salary: '0' });
   const [showEditModal, setShowEditModal] = useState(false);
   const [isSettingBase, setIsSettingBase] = useState(false);
 
@@ -78,6 +78,9 @@ export default function SalaryManagementScreen() {
       
       setSelectedForEdit(employee);
       setEditValues({
+        name: employee.name || '',
+        employee_id: employee.phone || (employee.id ? `BKNT${employee.id.replace(/[^0-9]/g, '').substring(0, 4)}` : ''),
+        designation: employee.department || employee.role || '',
         bonus: '0',
         deduction: deduction.toString(),
         base_salary: baseSalary.toString()
@@ -99,10 +102,26 @@ export default function SalaryManagementScreen() {
       const deductionVal = Number(editValues.deduction || 0);
       const bonusVal = Number(editValues.bonus || 0);
 
-      // If we are setting/updating the base salary
-      if (baseVal !== employee.base_salary) {
-        await usersApi.updateProfile(employee.id, { base_salary: baseVal });
-        setEmployees(prev => prev.map(e => e.id === employee.id ? { ...e, base_salary: baseVal } : e));
+      // If we are setting/updating the employee details or base salary
+      if (
+        baseVal !== employee.base_salary ||
+        editValues.name !== employee.name ||
+        editValues.employee_id !== employee.phone ||
+        editValues.designation !== employee.department
+      ) {
+        await usersApi.updateProfile(employee.id, { 
+          base_salary: baseVal,
+          name: editValues.name,
+          phone: editValues.employee_id,
+          department: editValues.designation
+        });
+        setEmployees(prev => prev.map(e => e.id === employee.id ? { 
+          ...e, 
+          base_salary: baseVal,
+          name: editValues.name,
+          phone: editValues.employee_id,
+          department: editValues.designation
+        } : e));
       }
 
       const salaryRecord = await salariesApi.generateSalary({
@@ -134,6 +153,9 @@ export default function SalaryManagementScreen() {
 
   const handleClearForm = () => {
     setEditValues({
+      name: selectedForEdit?.name || '',
+      employee_id: selectedForEdit?.phone || '',
+      designation: selectedForEdit?.department || '',
       bonus: '0',
       deduction: '0',
       base_salary: selectedForEdit?.base_salary?.toString() || '0'
@@ -144,6 +166,9 @@ export default function SalaryManagementScreen() {
     const existing = salaries[employee.id];
     setSelectedForEdit(employee);
     setEditValues({
+      name: employee.name || '',
+      employee_id: employee.phone || (employee.id ? `BKNT${employee.id.replace(/[^0-9]/g, '').substring(0, 4)}` : ''),
+      designation: employee.department || employee.role || '',
       bonus: existing?.bonus?.toString() || '0',
       deduction: existing?.absent_deduction?.toString() || '0',
       base_salary: employee.base_salary?.toString() || '0'
@@ -282,6 +307,31 @@ export default function SalaryManagementScreen() {
                  keyboardShouldPersistTaps="handled"
                >
                 <Text style={styles.empNameTag}>{selectedForEdit?.name}</Text>
+                
+                <Text style={styles.modalLabel}>Employee Name</Text>
+                <TextInput 
+                  style={styles.modalInput} 
+                  value={editValues.name}
+                  onChangeText={(v) => setEditValues(e => ({...e, name: v}))}
+                />
+
+                <Text style={styles.modalLabel}>Employee ID</Text>
+                <TextInput 
+                  style={styles.modalInput} 
+                  placeholder="e.g. BKNT2145"
+                  placeholderTextColor={COLORS.textMuted}
+                  value={editValues.employee_id}
+                  onChangeText={(v) => setEditValues(e => ({...e, employee_id: v}))}
+                />
+
+                <Text style={styles.modalLabel}>Designation</Text>
+                <TextInput 
+                  style={styles.modalInput} 
+                  placeholder="e.g. Senior Software Engineer"
+                  placeholderTextColor={COLORS.textMuted}
+                  value={editValues.designation}
+                  onChangeText={(v) => setEditValues(e => ({...e, designation: v}))}
+                />
                 
                 <Text style={styles.modalLabel}>Monthly Base Salary (₹)</Text>
                 <TextInput 
