@@ -13,8 +13,8 @@ const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }) {
   const { signIn } = useAuthStore();
-  const [email, setEmail] = useState('kaththibala89@gmail.com');
-  const [password, setPassword] = useState('balakish5');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
