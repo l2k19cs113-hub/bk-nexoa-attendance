@@ -21,10 +21,16 @@ const useAuthStore = create((set, get) => ({
         try {
           if (!profile) {
             console.log('Profile missing for user, creating now...');
-            const role = (session.user.email.toLowerCase() === 'kaththibala89@gmail.com' || session.user.email.toLowerCase() === 'admin@gmail.com') ? 'admin' : 'employee';
+            const email = session.user.email.toLowerCase();
+            const isAdminEmail = (
+              email === 'l2k19cs113@nmc.ac.in' || 
+              email === 'kaththibala89@gmail.com' || 
+              email === 'admin@gmail.com'
+            );
+            const role = isAdminEmail ? 'admin' : 'employee';
             profile = await usersApi.createProfile(session.user.id, {
               name: session.user.email.split('@')[0],
-              email: session.user.email,
+              email: email,
               role: role,
             });
           }
@@ -61,14 +67,16 @@ const useAuthStore = create((set, get) => ({
 
     if (!profile) {
       try {
+        const emailLower = email.toLowerCase();
         const isAdminEmail = (
-          email.toLowerCase() === 'kaththibala89@gmail.com' || 
-          email.toLowerCase() === 'admin@gmail.com'
+          emailLower === 'l2k19cs113@nmc.ac.in' || 
+          emailLower === 'kaththibala89@gmail.com' || 
+          emailLower === 'admin@gmail.com'
         );
         const role = isAdminEmail ? 'admin' : 'employee';
         profile = await usersApi.createProfile(data.user.id, {
           name: email.split('@')[0],
-          email: email.toLowerCase(),
+          email: emailLower,
           role: role,
         });
       } catch (profileErr) {
