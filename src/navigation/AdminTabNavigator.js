@@ -9,6 +9,7 @@ import EmployeeManagementScreen from '../screens/admin/EmployeeManagementScreen'
 import AdminAttendanceScreen from '../screens/admin/AdminAttendanceScreen';
 import AdminReportsScreen from '../screens/admin/AdminReportsScreen';
 import AnalyticsScreen from '../screens/admin/AnalyticsScreen';
+import SalaryManagementScreen from '../screens/admin/SalaryManagementScreen';
 import ProfileScreen from '../screens/employee/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
@@ -66,6 +67,15 @@ export default function AdminTabNavigator() {
         options={{
           tabBarIcon: ({ focused, color }) => (
             <TabIcon name={focused ? 'document-text' : 'document-text-outline'} label="Reports" focused={focused} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Salary"
+        component={SalaryManagementScreen}
+        options={{
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={focused ? 'cash' : 'cash-outline'} label="Salary" focused={focused} color={color} />
           ),
         }}
       />

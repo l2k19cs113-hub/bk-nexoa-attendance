@@ -95,7 +95,7 @@ export const usersApi = {
       .from('users')
       .select('*')
       .eq('role', 'employee')
-      .order('created_at', { ascending: false });
+      .order('name', { ascending: true });
     if (error) throw error;
     return data;
   },
@@ -117,6 +117,66 @@ export const usersApi = {
     const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
     return data.publicUrl;
   },
+};
+
+// ─── SALARIES API ─────────────────────────────────────────────────────────────
+
+export const salariesApi = {
+  getMonthlySalary: async (userId, month, year) => {
+    const { data, error } = await supabase
+      .from('salaries')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('month', month)
+      .eq('year', year)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+
+  generateSalary: async ({ userId, month, year, baseSalary, absentDeduction = 0, bonus = 0 }) => {
+    const netSalary = (Number(baseSalary) - Number(absentDeduction)) + Number(bonus);
+    
+    // Upsert salary record
+    const { data, error } = await supabase
+      .from('salaries')
+      .upsert({
+        user_id: userId,
+        month,
+        year,
+        base_salary: baseSalary,
+        absent_deduction: absentDeduction,
+        bonus,
+        net_salary: netSalary,
+        status: 'pending',
+      }, { onConflict: 'user_id,month,year' })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  updateSalaryStatus: async (salaryId, status) => {
+    const { data, error } = await supabase
+      .from('salaries')
+      .update({ status })
+      .eq('id', salaryId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  getCompanyReport: async (month, year) => {
+    const { data, error } = await supabase
+      .from('salaries')
+      .select('*, users(name, email, bank_name, account_no)')
+      .eq('month', month)
+      .eq('year', year);
+    if (error) throw error;
+    return data;
+  }
 };
 
 // ─── ATTENDANCE API ───────────────────────────────────────────────────────────

@@ -5,9 +5,11 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { COLORS, RADIUS } from '../../constants';
 import useAuthStore from '../../store/authStore';
+import { salariesApi, attendanceApi } from '../../api';
+import { generatePayslipPDF } from '../../utils/pdfGenerator';
 
 export default function ProfileScreen() {
   const { profile, signOut, updateProfile } = useAuthStore();
@@ -16,6 +18,42 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [notifications, setNotifications] = useState(true);
+  const [salary, setSalary] = useState(null);
+  const [fetchingSalary, setFetchingSalary] = useState(false);
+
+  React.useEffect(() => {
+    const fetchSalary = async () => {
+      try {
+        setFetchingSalary(true);
+        const now = new Date();
+        const data = await salariesApi.getMonthlySalary(profile.id, now.getMonth() + 1, now.getFullYear());
+        setSalary(data);
+      } catch (err) {
+        console.log('No salary found/error:', err);
+      } finally {
+        setFetchingSalary(false);
+      }
+    };
+    if (profile?.id) fetchSalary();
+  }, [profile]);
+
+  const handleDownloadPayslip = async () => {
+    if (!salary) {
+      Alert.alert('Not Found', 'Salary not generated for this month yet.');
+      return;
+    }
+    try {
+      setLoading(true);
+      const start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+      const end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+      const attendance = await attendanceApi.getUserAttendance(profile.id, start, end);
+      await generatePayslipPDF(profile, salary, attendance);
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignOut = () => {
     if (Platform.OS === 'web') {
@@ -99,6 +137,47 @@ export default function ProfileScreen() {
                 <LinearGradient colors={COLORS.gradientPrimary} style={styles.saveBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
                   {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>Save</Text>}
                 </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Salary Section */}
+        {profile?.role === 'employee' && (
+          <View style={styles.bankSection}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="cash-outline" size={18} color={COLORS.primary} />
+              <Text style={styles.sectionTitle}>Employee Salary & Payslip</Text>
+            </View>
+            <View style={styles.bankCard}>
+              <View style={styles.bankRow}>
+                <Text style={styles.bankLabel}>Base Monthly Salary</Text>
+                <Text style={styles.bankValue}>₹{profile?.base_salary || '0'}</Text>
+              </View>
+              {salary && (
+                <>
+                  <View style={styles.bankDivider} />
+                  <View style={styles.bankRow}>
+                    <Text style={styles.bankLabel}>Present Month Payout</Text>
+                    <Text style={[styles.bankValue, { color: COLORS.success }]}>₹{salary.net_salary}</Text>
+                  </View>
+                </>
+              )}
+              <TouchableOpacity 
+                style={[styles.downloadBtn, !salary && styles.disabledBtn]} 
+                onPress={handleDownloadPayslip}
+                disabled={loading || !salary}
+              >
+                {loading ? (
+                  <ActivityIndicator color={COLORS.primary} size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="document-outline" size={16} color={salary ? COLORS.primary : COLORS.textMuted} />
+                    <Text style={[styles.downloadBtnText, !salary && { color: COLORS.textMuted }]}>
+                      {salary ? "Download Payslip PDF" : "Payslip not available"}
+                    </Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -219,4 +298,7 @@ const styles = StyleSheet.create({
   signOutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: `${COLORS.danger}15`, borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: `${COLORS.danger}30` },
   signOutText: { fontSize: 15, fontWeight: '700', color: COLORS.danger },
   footer: { textAlign: 'center', fontSize: 11, color: COLORS.textMuted, marginBottom: 8 },
+  downloadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, paddingVertical: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
+  downloadBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+  disabledBtn: { opacity: 0.5 },
 });

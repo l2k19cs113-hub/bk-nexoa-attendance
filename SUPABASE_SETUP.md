@@ -42,7 +42,27 @@ CREATE TABLE users (
   avatar_url TEXT,
   phone TEXT,
   department TEXT,
+  base_salary NUMERIC DEFAULT 0,
+  bank_name TEXT,
+  account_no TEXT,
+  ifsc_code TEXT,
+  branch_name TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─── SALARIES TABLE (MONTHLY RECORDS) ─────────────────────────────────────────
+CREATE TABLE salaries (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  month INTEGER NOT NULL, -- 1 to 12
+  year INTEGER NOT NULL,
+  base_salary NUMERIC NOT NULL,
+  absent_deduction NUMERIC DEFAULT 0,
+  bonus NUMERIC DEFAULT 0,
+  net_salary NUMERIC NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, month, year)
 );
 
 -- ─── ATTENDANCE TABLE ─────────────────────────────────────────────────────────
@@ -77,6 +97,7 @@ CREATE INDEX idx_attendance_date ON attendance(date);
 CREATE INDEX idx_reports_user_id ON reports(user_id);
 CREATE INDEX idx_reports_status ON reports(status);
 CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_salaries_user_year_month ON salaries(user_id, year, month);
 ```
 
 ---

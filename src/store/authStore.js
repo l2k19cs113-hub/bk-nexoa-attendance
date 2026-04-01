@@ -21,7 +21,7 @@ const useAuthStore = create((set, get) => ({
         try {
           if (!profile) {
             console.log('Profile missing for user, creating now...');
-            const role = session.user.email.toLowerCase() === 'kaththibala89@gmail.com' ? 'admin' : 'employee';
+            const role = (session.user.email.toLowerCase() === 'kaththibala89@gmail.com' || session.user.email.toLowerCase() === 'admin@gmail.com') ? 'admin' : 'employee';
             profile = await usersApi.createProfile(session.user.id, {
               name: session.user.email.split('@')[0],
               email: session.user.email,
@@ -56,7 +56,7 @@ const useAuthStore = create((set, get) => ({
     // If profile is missing (created manually in Auth), create it now
     if (!profile) {
       try {
-        const role = email.toLowerCase() === 'kaththibala89@gmail.com' ? 'admin' : 'employee';
+        const role = (email.toLowerCase() === 'kaththibala89@gmail.com' || email.toLowerCase() === 'admin@gmail.com') ? 'admin' : 'employee';
         profile = await usersApi.createProfile(data.user.id, {
           name: email.split('@')[0],
           email: email.toLowerCase(),

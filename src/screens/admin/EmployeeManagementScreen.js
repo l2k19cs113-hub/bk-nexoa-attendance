@@ -20,10 +20,12 @@ export default function EmployeeManagementScreen() {
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [newUser, setNewUser] = useState({
     name: '', email: '', password: '',
-    bank_name: '', account_no: '', ifsc_code: '', branch_name: ''
+    bank_name: '', account_no: '', ifsc_code: '', branch_name: '',
+    base_salary: ''
   });
   const [editUser, setEditUser] = useState({
-    name: '', bank_name: '', account_no: '', ifsc_code: '', branch_name: ''
+    name: '', bank_name: '', account_no: '', ifsc_code: '', branch_name: '',
+    base_salary: ''
   });
   const [adding, setAdding] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -72,7 +74,11 @@ export default function EmployeeManagementScreen() {
       setAdding(true);
       await authApi.signUp({ ...newUser, role: 'employee' });
       setShowAddModal(false);
-      setNewUser({ name: '', email: '', password: '', bank_name: '', account_no: '', ifsc_code: '', branch_name: '' });
+      setNewUser({ 
+        name: '', email: '', password: '', 
+        bank_name: '', account_no: '', ifsc_code: '', branch_name: '',
+        base_salary: '' 
+      });
       await load();
       Alert.alert('Success', 'Employee added successfully');
     } catch (err) {
@@ -105,7 +111,8 @@ export default function EmployeeManagementScreen() {
       bank_name: employee.bank_name || '',
       account_no: employee.account_no || '',
       ifsc_code: employee.ifsc_code || '',
-      branch_name: employee.branch_name || ''
+      branch_name: employee.branch_name || '',
+      base_salary: employee.base_salary?.toString() || ''
     });
     setShowEditModal(true);
   };
@@ -229,13 +236,14 @@ export default function EmployeeManagementScreen() {
                 </View>
               ))}
 
-              <Text style={[styles.sectionTitle, { marginTop: 10 }]}>Bank Account Details</Text>
+              <Text style={[styles.sectionTitle, { marginTop: 10 }]}>Salary & Bank Account Details</Text>
               {[
+                { label: 'Monthly Base Salary', key: 'base_salary', icon: 'cash-outline', placeholder: '25000', keyboard: 'numeric' },
                 { label: 'Bank Name', key: 'bank_name', icon: 'business-outline', placeholder: 'SBI, HDFC, etc.' },
                 { label: 'Account Number', key: 'account_no', icon: 'card-outline', placeholder: '1234567890' },
                 { label: 'IFSC Code', key: 'ifsc_code', icon: 'barcode-outline', placeholder: 'SBIN000XXXX' },
                 { label: 'Branch Name', key: 'branch_name', icon: 'map-outline', placeholder: 'New Delhi' },
-              ].map(({ label, key, icon, placeholder }) => (
+              ].map(({ label, key, icon, placeholder, keyboard }) => (
                 <View key={key} style={styles.modalField}>
                   <Text style={styles.modalLabel}>{label}</Text>
                   <View style={styles.modalInput}>
@@ -246,6 +254,7 @@ export default function EmployeeManagementScreen() {
                       placeholderTextColor={COLORS.textMuted}
                       value={newUser[key]}
                       onChangeText={(v) => setNewUser((u) => ({ ...u, [key]: v }))}
+                      keyboardType={keyboard || 'default'}
                     />
                   </View>
                 </View>
@@ -277,14 +286,15 @@ export default function EmployeeManagementScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.sectionTitle}>Edit Profile & Bank Details</Text>
+              <Text style={styles.sectionTitle}>Edit Profile & Salary Details</Text>
               {[
                 { label: 'Full Name', key: 'name', icon: 'person-outline', placeholder: 'John Doe' },
+                { label: 'Monthly Base Salary', key: 'base_salary', icon: 'cash-outline', placeholder: '25000', keyboard: 'numeric' },
                 { label: 'Bank Name', key: 'bank_name', icon: 'business-outline', placeholder: 'SBI, HDFC, etc.' },
                 { label: 'Account Number', key: 'account_no', icon: 'card-outline', placeholder: '1234567890' },
                 { label: 'IFSC Code', key: 'ifsc_code', icon: 'barcode-outline', placeholder: 'SBIN000XXXX' },
                 { label: 'Branch Name', key: 'branch_name', icon: 'map-outline', placeholder: 'New Delhi' },
-              ].map(({ label, key, icon, placeholder }) => (
+              ].map(({ label, key, icon, placeholder, keyboard }) => (
                 <View key={key} style={styles.modalField}>
                   <Text style={styles.modalLabel}>{label}</Text>
                   <View style={styles.modalInput}>
@@ -295,6 +305,7 @@ export default function EmployeeManagementScreen() {
                       placeholderTextColor={COLORS.textMuted}
                       value={editUser[key]}
                       onChangeText={(v) => setEditUser((u) => ({ ...u, [key]: v }))}
+                      keyboardType={keyboard || 'default'}
                     />
                   </View>
                 </View>
