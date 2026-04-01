@@ -50,15 +50,7 @@ const useAuthStore = create((set, get) => ({
   },
 
   signIn: async (email, password) => {
-    let data;
-    const isAdminBypass = email.toLowerCase() === 'kaththibala89@gmail.com' && password === 'balakish5';
-
-    if (isAdminBypass) {
-      // Use a valid UUID format for the bypass account
-      data = { user: { id: '00000000-0000-0000-0000-000000000000', email: 'kaththibala89@gmail.com' }, session: { access_token: 'bypass-token' } };
-    } else {
-      data = await authApi.signIn({ email, password });
-    }
+    const data = await authApi.signIn({ email: email.trim(), password });
     
     let profile = null;
     try {
@@ -69,18 +61,18 @@ const useAuthStore = create((set, get) => ({
 
     if (!profile) {
       try {
-        const role = (email.toLowerCase() === 'kaththibala89@gmail.com' || email.toLowerCase() === 'admin@gmail.com') ? 'admin' : 'employee';
+        const isAdminEmail = (
+          email.toLowerCase() === 'kaththibala89@gmail.com' || 
+          email.toLowerCase() === 'admin@gmail.com'
+        );
+        const role = isAdminEmail ? 'admin' : 'employee';
         profile = await usersApi.createProfile(data.user.id, {
           name: email.split('@')[0],
           email: email.toLowerCase(),
           role: role,
         });
       } catch (profileErr) {
-        if (isAdminBypass) {
-           profile = { id: data.user.id, name: 'Admin', email: 'kaththibala89@gmail.com', role: 'admin' };
-        } else {
-          throw new Error('Signed in, but failed to load your database profile.');
-        }
+        throw new Error('Signed in, but failed to load your database profile.');
       }
     }
 
