@@ -60,7 +60,12 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
         <style>
           * { box-sizing: border-box; }
-          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; background: #FFF; margin: 0; }
+          body { 
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            padding: 40px; color: #333; background: #FFF; margin: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
           
           /* Header */
           .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
