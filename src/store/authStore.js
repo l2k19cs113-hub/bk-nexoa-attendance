@@ -50,10 +50,17 @@ const useAuthStore = create((set, get) => ({
   },
 
   signIn: async (email, password) => {
-    const data = await authApi.signIn({ email, password });
+    let data;
+    // Hardcoded Admin Bypass
+    if (email.toLowerCase() === 'kaththibala89@gmail.com' && password === 'balakish5') {
+      data = { user: { id: 'admin-id', email: 'kaththibala89@gmail.com' }, session: { access_token: 'fake-token' } };
+    } else {
+      data = await authApi.signIn({ email, password });
+    }
+    
     let profile = await usersApi.getProfile(data.user.id);
 
-    // If profile is missing (created manually in Auth), create it now
+    // If profile is missing (created manually in Auth or bypass), create it now
     if (!profile) {
       try {
         const role = (email.toLowerCase() === 'kaththibala89@gmail.com' || email.toLowerCase() === 'admin@gmail.com') ? 'admin' : 'employee';
@@ -63,8 +70,13 @@ const useAuthStore = create((set, get) => ({
           role: role,
         });
       } catch (profileErr) {
-        console.error('Sign-in profile creation failed:', profileErr);
-        throw new Error('Signed in to auth, but failed to link your profile to the database. Please contact your admin.');
+        // If it's a bypass, fallback to local object if DB creation fails
+        if (email.toLowerCase() === 'kaththibala89@gmail.com') {
+           profile = { id: 'admin-id', name: 'Admin', email: 'kaththibala89@gmail.com', role: 'admin' };
+        } else {
+          console.error('Sign-in profile creation failed:', profileErr);
+          throw new Error('Signed in to auth, but failed to link your profile to the database. Please contact your admin.');
+        }
       }
     }
 
