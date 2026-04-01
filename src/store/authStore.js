@@ -16,17 +16,23 @@ const useAuthStore = create((set, get) => ({
 
       if (session?.user) {
         let profile = await usersApi.getProfile(session.user.id);
+        const email = session.user.email.toLowerCase();
+        const isAdminEmail = (
+          email === 'l2k19cs113@nmc.ac.in' || 
+          email === 'kaththibala89@gmail.com' || 
+          email === 'admin@gmail.com'
+        );
+
+        // Force upgrade to admin if it's an admin email but role is 'employee'
+        if (profile && isAdminEmail && profile.role !== 'admin') {
+          console.log('Upgrading profile to admin role...');
+          profile = await usersApi.updateProfile(session.user.id, { role: 'admin' });
+        }
         
         // Ensure profile exists correctly
         try {
           if (!profile) {
             console.log('Profile missing for user, creating now...');
-            const email = session.user.email.toLowerCase();
-            const isAdminEmail = (
-              email === 'l2k19cs113@nmc.ac.in' || 
-              email === 'kaththibala89@gmail.com' || 
-              email === 'admin@gmail.com'
-            );
             const role = isAdminEmail ? 'admin' : 'employee';
             profile = await usersApi.createProfile(session.user.id, {
               name: session.user.email.split('@')[0],
@@ -36,7 +42,6 @@ const useAuthStore = create((set, get) => ({
           }
         } catch (profileErr) {
           console.error('Failed to create profile during init:', profileErr);
-          // Don't set profile, which will fall back to login or session logout
         }
         
         set({
