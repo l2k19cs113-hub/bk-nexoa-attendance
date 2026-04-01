@@ -92,7 +92,7 @@ export default function ProfileScreen() {
     { icon: 'lock-closed-outline', label: 'Change Password', action: () => Alert.alert('Coming Soon', 'Password change will be available soon.') },
     { icon: 'notifications-outline', label: 'Notifications', action: null, toggle: true, value: notifications, onChange: setNotifications },
     { icon: 'moon-outline', label: 'Dark Mode', action: null, toggle: true, value: darkMode, onChange: setDarkMode },
-    { icon: 'help-circle-outline', label: 'Help & Support', action: () => Alert.alert('Support', 'Contact: support@bknexora.com') },
+    { icon: 'help-circle-outline', label: 'Help & Support', action: () => Alert.alert('Support', 'Contact: support@bknexoratech.in') },
     { icon: 'information-circle-outline', label: 'About App', action: () => Alert.alert('BK Nexora Tech Attendance', 'Version 1.1.0\n\nBuilt for teams that value productivity.') },
   ];
 

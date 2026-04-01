@@ -251,7 +251,7 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
         </div>
 
         <div class="bottom-bar">
-          www.bknoexoratech.in | support@bknexoratech.in | BK Nexora Tech, Trichy, Tamil Nadu
+          bknoexoratech.in | support@bknexoratech.in |  BK Nexora Tech,  trichy,tamil nadu
           <div class="bottom-line"></div>
         </div>
       </body>
