@@ -246,9 +246,9 @@ export const generatePayslipPDF = async (employee, salary, attendance) => {
         <div class="signatures-area">
           <div class="sig-box">
             <div class="sig-line">
-               <span class="cursive">Saranya</span>
+               <span class="cursive">Saranya. B</span>
             </div>
-            Saranya, CEO
+            Saranya B, CEO
           </div>
           <div class="sig-box">
             <div class="sig-line"></div>
