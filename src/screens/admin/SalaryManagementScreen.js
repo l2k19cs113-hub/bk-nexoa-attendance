@@ -100,15 +100,17 @@ export default function SalaryManagementScreen() {
       
       // If we are setting the base salary for the first time
       if (isSettingBase) {
-        await usersApi.updateProfile(employee.id, { base_salary: Number(editValues.base_salary) });
-        employee.base_salary = Number(editValues.base_salary);
+        const baseVal = Number(editValues.base_salary);
+        await usersApi.updateProfile(employee.id, { base_salary: baseVal });
+        // Update the local employees state to reflect the new base salary
+        setEmployees(prev => prev.map(e => e.id === employee.id ? { ...e, base_salary: baseVal } : e));
       }
 
       const salaryRecord = await salariesApi.generateSalary({
         userId: employee.id,
         month: currentMonth,
         year: currentYear,
-        baseSalary: employee.base_salary || Number(editValues.base_salary),
+        baseSalary: Number(isSettingBase ? editValues.base_salary : employee.base_salary),
         absentDeduction: Number(editValues.deduction),
         bonus: Number(editValues.bonus)
       });
