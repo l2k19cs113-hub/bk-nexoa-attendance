@@ -161,6 +161,31 @@ export default function AdminDashboardScreen() {
           ))
         )}
 
+        {/* Quick Actions */}
+        <Text style={styles.sectionTitle}>HR Quick Actions</Text>
+        <View style={styles.actionsGrid}>
+          <TouchableOpacity 
+            activeOpacity={0.8} 
+            onPress={() => navigation.navigate('AdminLeaveManagement')}
+            style={styles.actionCardWrapper}
+          >
+            <LinearGradient colors={['#8B5CF6', '#6D28D9']} style={styles.actionCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <Ionicons name="cafe" size={24} color="#fff" />
+              <Text style={styles.actionLabel}>Manage Leaves</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            activeOpacity={0.8} 
+            onPress={() => navigation.navigate('Employees')}
+            style={styles.actionCardWrapper}
+          >
+            <LinearGradient colors={COLORS.gradientPrimary} style={styles.actionCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <Ionicons name="people" size={24} color="#fff" />
+              <Text style={styles.actionLabel}>Team Directory</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
         {/* Report Summary */}
         <Text style={styles.sectionTitle}>Report Summary</Text>
         <View style={styles.reportSummaryCard}>
@@ -264,4 +289,12 @@ const styles = StyleSheet.create({
   reportDot: { width: 8, height: 8, borderRadius: 4, marginRight: 12 },
   reportLabel: { flex: 1, fontSize: 14, color: COLORS.textMuted },
   reportValue: { fontSize: 16, fontWeight: '700' },
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 8 },
+  actionCardWrapper: { width: (width - 44) / 2 },
+  actionCard: {
+    borderRadius: RADIUS.lg, padding: 18, alignItems: 'center', gap: 10,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2, shadowRadius: 8, elevation: 6,
+  },
+  actionLabel: { fontSize: 13, fontWeight: '700', color: '#fff', textAlign: 'center' },
 });

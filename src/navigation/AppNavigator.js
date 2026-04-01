@@ -13,6 +13,7 @@ import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 
 // Admin Navigator
 import AdminTabNavigator from './AdminTabNavigator';
+import AdminLeaveManagementScreen from '../screens/admin/AdminLeaveManagementScreen';
 // Employee Navigator
 import EmployeeTabNavigator from './EmployeeTabNavigator';
 import LeaveRequestScreen from '../screens/employee/LeaveRequestScreen';
@@ -44,7 +45,10 @@ export default function AppNavigator() {
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           </>
         ) : profile?.role === 'admin' ? (
-          <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
+          <>
+            <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
+            <Stack.Screen name="AdminLeaveManagement" component={AdminLeaveManagementScreen} />
+          </>
         ) : (
           <>
             <Stack.Screen name="EmployeeTabs" component={EmployeeTabNavigator} />
