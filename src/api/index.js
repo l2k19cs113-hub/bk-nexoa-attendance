@@ -135,8 +135,8 @@ export const salariesApi = {
     return data && data.length > 0 ? data[0] : null;
   },
 
-  generateSalary: async ({ userId, month, year, baseSalary, absentDeduction = 0, bonus = 0 }) => {
-    const netSalary = (Number(baseSalary) - Number(absentDeduction)) + Number(bonus);
+  generateSalary: async ({ userId, month, year, baseSalary, absentDeduction = 0, bonus = 0, unpaidLeaveDeduction = 0 }) => {
+    const netSalary = (Number(baseSalary) - Number(absentDeduction) - Number(unpaidLeaveDeduction)) + Number(bonus);
     
     // Find existing
     const { data: existing } = await supabase
@@ -154,7 +154,7 @@ export const salariesApi = {
         .from('salaries')
         .update({
           base_salary: baseSalary,
-          absent_deduction: absentDeduction,
+          absent_deduction: absentDeduction + unpaidLeaveDeduction,
           bonus,
           net_salary: netSalary,
         })
@@ -172,7 +172,7 @@ export const salariesApi = {
           month,
           year,
           base_salary: baseSalary,
-          absent_deduction: absentDeduction,
+          absent_deduction: absentDeduction + unpaidLeaveDeduction,
           bonus,
           net_salary: netSalary,
           status: 'pending',
@@ -205,6 +205,79 @@ export const salariesApi = {
       .order('created_at', { ascending: true });
     if (error) throw error;
     return data;
+  }
+};
+
+// ─── LEAVES API ───────────────────────────────────────────────────────────────
+
+export const leavesApi = {
+  requestLeave: async (leaveData) => {
+    const { data, error } = await supabase
+      .from('leaves')
+      .insert({
+        user_id: leaveData.userId,
+        type: leaveData.type,
+        start_date: leaveData.startDate,
+        end_date: leaveData.endDate,
+        total_days: leaveData.totalDays,
+        reason: leaveData.reason,
+        status: 'pending'
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  getMyLeaves: async (userId) => {
+    const { data, error } = await supabase
+      .from('leaves')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  getAllLeaves: async (status) => {
+    let query = supabase
+      .from('leaves')
+      .select('*, users(name, email, department)')
+      .order('created_at', { ascending: false });
+    
+    if (status && status !== 'all') query = query.eq('status', status);
+    
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+  },
+
+  updateLeaveStatus: async (leaveId, status) => {
+    const { data, error } = await supabase
+      .from('leaves')
+      .update({ status, reviewed_at: new Date().toISOString() })
+      .eq('id', leaveId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  getMonthlyUnpaidLeaves: async (userId, month, year) => {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+
+    const { data, error } = await supabase
+      .from('leaves')
+      .select('total_days')
+      .eq('user_id', userId)
+      .eq('type', 'Unpaid')
+      .eq('status', 'approved')
+      .gte('start_date', startDate)
+      .lte('end_date', endDate);
+    
+    if (error) throw error;
+    return data.reduce((sum, current) => sum + current.total_days, 0);
   }
 };
 

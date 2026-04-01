@@ -15,6 +15,7 @@ import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import AdminTabNavigator from './AdminTabNavigator';
 // Employee Navigator
 import EmployeeTabNavigator from './EmployeeTabNavigator';
+import LeaveRequestScreen from '../screens/employee/LeaveRequestScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -45,7 +46,10 @@ export default function AppNavigator() {
         ) : profile?.role === 'admin' ? (
           <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
         ) : (
-          <Stack.Screen name="EmployeeTabs" component={EmployeeTabNavigator} />
+          <>
+            <Stack.Screen name="EmployeeTabs" component={EmployeeTabNavigator} />
+            <Stack.Screen name="LeaveRequest" component={LeaveRequestScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

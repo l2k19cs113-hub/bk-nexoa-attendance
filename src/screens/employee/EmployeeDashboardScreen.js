@@ -193,6 +193,7 @@ export default function EmployeeDashboardScreen() {
           {[
             { icon: 'finger-print', label: 'Check In / Out', color: COLORS.gradientPrimary, screen: 'Attendance' },
             { icon: 'create', label: 'Submit Report', color: COLORS.gradientSuccess, screen: 'Report' },
+            { icon: 'cafe', label: 'Request Leave', color: ['#8B5CF6', '#6D28D9'], screen: 'LeaveRequest' },
             { icon: 'calendar', label: 'View History', color: COLORS.gradientSecondary, screen: 'History' },
             { icon: 'document-text', label: 'My Reports', color: COLORS.gradientAccent, screen: 'ReportHistory' },
           ].map((action) => (
