@@ -29,7 +29,7 @@ const StatCard = ({ title, value, icon, gradient, subtitle }) => (
   </LinearGradient>
 );
 
-export default function AdminDashboardScreen() {
+export default function AdminDashboardScreen({ navigation }) {
   const { profile } = useAuthStore();
   const { fetchTodayStats, todayStats } = useAttendanceStore();
   const { fetchStats, reportStats } = useReportsStore();
