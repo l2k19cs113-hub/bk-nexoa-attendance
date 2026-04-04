@@ -20,6 +20,38 @@ import LeaveRequestScreen from '../screens/employee/LeaveRequestScreen';
 
 const Stack = createNativeStackNavigator();
 
+const linking = {
+  prefixes: ['https://bk-nexoa-attendance.vercel.app', 'bk-attendance://'],
+  config: {
+    screens: {
+      Splash: 'splash',
+      Login: 'login',
+      AdminTabs: {
+        screens: {
+          Dashboard: 'dashboard',
+          Employees: 'team',
+          Attendance: 'attendance',
+          Reports: 'reports',
+          Salary: 'salary',
+          Analytics: 'analytics',
+          Profile: 'profile',
+        }
+      },
+      AdminLeaveManagement: 'AdminLeaveManagement',
+      EmployeeTabs: {
+        screens: {
+          Home: 'home',
+          Attendance: 'employee-attendance',
+          History: 'history',
+          Reports: 'employee-reports',
+          Profile: 'employee-profile',
+        }
+      },
+      LeaveRequest: 'LeaveRequest',
+    }
+  }
+};
+
 export default function AppNavigator() {
   const { isAuthenticated, isLoading, profile, initialize } = useAuthStore();
 
@@ -36,7 +68,7 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <>
