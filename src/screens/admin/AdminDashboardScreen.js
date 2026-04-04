@@ -91,34 +91,50 @@ export default function AdminDashboardScreen() {
         {/* Quick Stats */}
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.statsGrid}>
-          <StatCard
-            title="Total Employees"
-            value={employeeCount}
-            icon="people"
-            gradient={COLORS.gradientPrimary}
-            subtitle="Active workforce"
-          />
-          <StatCard
-            title="Present Today"
-            value={todayStats?.present || 0}
-            icon="checkmark-circle"
-            gradient={COLORS.gradientSuccess}
-            subtitle="Checked in"
-          />
-          <StatCard
-            title="Pending Reports"
-            value={reportStats?.pending || 0}
-            icon="document-text"
-            gradient={COLORS.gradientAccent}
-            subtitle="Awaiting review"
-          />
-          <StatCard
-            title="Approved Reports"
-            value={reportStats?.approved || 0}
-            icon="shield-checkmark"
-            gradient={COLORS.gradientSecondary}
-            subtitle="This month"
-          />
+          <TouchableOpacity 
+            activeOpacity={0.9} 
+            onPress={() => navigation.navigate('Employees')}
+            style={styles.statCardWrapper}
+          >
+            <StatCard
+              title="Total Employees"
+              value={employeeCount}
+              icon="people"
+              gradient={COLORS.gradientPrimary}
+              subtitle="Active workforce"
+            />
+          </TouchableOpacity>
+          <View style={styles.statCardWrapper}>
+            <StatCard
+              title="Present Today"
+              value={todayStats?.present || 0}
+              icon="checkmark-circle"
+              gradient={COLORS.gradientSuccess}
+              subtitle="Checked in"
+            />
+          </View>
+          <TouchableOpacity 
+            activeOpacity={0.9} 
+            onPress={() => navigation.navigate('AdminLeaveManagement')}
+            style={styles.statCardWrapper}
+          >
+            <StatCard
+              title="Pending Leaves"
+              value={reportStats?.pending || 0}
+              icon="document-text"
+              gradient={COLORS.gradientAccent}
+              subtitle="Awaiting review"
+            />
+          </TouchableOpacity>
+          <View style={styles.statCardWrapper}>
+            <StatCard
+              title="Approved Reports"
+              value={reportStats?.approved || 0}
+              icon="shield-checkmark"
+              gradient={COLORS.gradientSecondary}
+              subtitle="This month"
+            />
+          </View>
         </View>
 
         {/* Attendance Snap */}
@@ -171,7 +187,7 @@ export default function AdminDashboardScreen() {
           >
             <LinearGradient colors={['#8B5CF6', '#6D28D9']} style={styles.actionCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
               <Ionicons name="cafe" size={24} color="#fff" />
-              <Text style={styles.actionLabel}>Manage Leaves</Text>
+              <Text style={styles.actionLabel}>Leave Management</Text>
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity 
@@ -181,7 +197,7 @@ export default function AdminDashboardScreen() {
           >
             <LinearGradient colors={COLORS.gradientPrimary} style={styles.actionCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
               <Ionicons name="people" size={24} color="#fff" />
-              <Text style={styles.actionLabel}>Team Directory</Text>
+              <Text style={styles.actionLabel}>Team Management</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -291,6 +307,7 @@ const styles = StyleSheet.create({
   reportValue: { fontSize: 16, fontWeight: '700' },
   actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 8 },
   actionCardWrapper: { width: (width - 44) / 2 },
+  statCardWrapper: { width: (width - 44) / 2 },
   actionCard: {
     borderRadius: RADIUS.lg, padding: 18, alignItems: 'center', gap: 10,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
