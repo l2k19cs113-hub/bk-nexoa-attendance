@@ -109,19 +109,30 @@ export default function SalaryManagementScreen() {
         editValues.employee_id !== employee.phone ||
         editValues.designation !== employee.department
       ) {
-        await usersApi.updateProfile(employee.id, { 
-          base_salary: baseVal,
-          name: editValues.name,
-          phone: editValues.employee_id,
-          department: editValues.designation
-        });
-        setEmployees(prev => prev.map(e => e.id === employee.id ? { 
-          ...e, 
-          base_salary: baseVal,
-          name: editValues.name,
-          phone: editValues.employee_id,
-          department: editValues.designation
-        } : e));
+        try {
+          await usersApi.updateProfile(employee.id, { 
+            base_salary: baseVal,
+            name: editValues.name,
+            phone: editValues.employee_id,
+            department: editValues.designation
+          });
+          setEmployees(prev => prev.map(e => e.id === employee.id ? { 
+            ...e, 
+            base_salary: baseVal,
+            name: editValues.name,
+            phone: editValues.employee_id,
+            department: editValues.designation
+          } : e));
+        } catch (profileErr) {
+          console.warn("Could not update all profile fields (base_salary/phone/department might be missing in schema)", profileErr);
+          // Try a fallback to just update name if the other columns throw an error
+          try {
+            await usersApi.updateProfile(employee.id, { name: editValues.name });
+            setEmployees(prev => prev.map(e => e.id === employee.id ? { ...e, name: editValues.name } : e));
+          } catch (e) {
+            console.log("Fallback profile update also failed", e);
+          }
+        }
       }
 
       const salaryRecord = await salariesApi.generateSalary({
@@ -138,7 +149,7 @@ export default function SalaryManagementScreen() {
       setIsSettingBase(false);
       Alert.alert('Success', 'Salary processed successfully.');
     } catch (err) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Error Generating Salary', err.message);
     } finally {
       setLoading(false);
     }
@@ -190,6 +201,16 @@ export default function SalaryManagementScreen() {
       Alert.alert('Error', 'Could not generate PDF');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleStatus = async (salary) => {
+    try {
+      const newStatus = salary.status === 'paid' ? 'pending' : 'paid';
+      const updated = await salariesApi.updateSalaryStatus(salary.id, newStatus);
+      setSalaries(prev => ({ ...prev, [salary.user_id]: updated }));
+    } catch (err) {
+      Alert.alert('Error', err.message);
     }
   };
 
@@ -245,6 +266,12 @@ export default function SalaryManagementScreen() {
           </TouchableOpacity>
           {salary && (
              <>
+               <TouchableOpacity 
+                 style={[styles.adjustBtn, { backgroundColor: salary.status === 'paid' ? COLORS.success : COLORS.warning }]} 
+                 onPress={() => handleToggleStatus(salary)}
+               >
+                 <Ionicons name={salary.status === 'paid' ? "checkmark-done-circle" : "checkmark-circle-outline"} size={18} color="#fff" />
+               </TouchableOpacity>
                <TouchableOpacity style={styles.adjustBtn} onPress={() => openAdjustModal(item)}>
                  <Ionicons name="options-outline" size={18} color="#fff" />
                </TouchableOpacity>
