@@ -19,6 +19,7 @@
     "@react-navigation/native-stack": "^6.11.0",
     "@react-navigation/stack": "^6.4.1",
     "@supabase/supabase-js": "^2.43.4",
+    "@vercel/speed-insights": "^2.0.0",
     "base64-arraybuffer": "^1.0.2",
     "date-fns": "^3.6.0",
     "expo": "~51.0.28",
